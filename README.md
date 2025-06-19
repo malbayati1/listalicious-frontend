@@ -1,5 +1,4 @@
-# 📱 My React Native App
-
+# 📱 Listalicious
 This is a cross-platform mobile app built with **React Native** and **Expo**. It runs on **iOS**, **Android**, and **Web**. This repo is the front end. To see the back end, check out https://github.com/ryanalfa94/listalicious-backend
 
 ---
