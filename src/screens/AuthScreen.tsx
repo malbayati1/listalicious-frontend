@@ -8,9 +8,7 @@ export default function Index() {
   const theme = useTheme();
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Text variant="displayLarge" style={styles.title}>
         Listalicious!
       </Text>
@@ -18,18 +16,10 @@ export default function Index() {
         Manage your groceries with ease!
       </Text>
 
-      <Button
-        mode="contained"
-        onPress={() => router.push("./login")}
-        style={styles.button}
-      >
+      <Button mode="contained" onPress={() => router.push("./login")} style={styles.button}>
         Log In
       </Button>
-      <Button
-        mode="outlined"
-        onPress={() => router.push("./register")}
-        style={styles.button}
-      >
+      <Button mode="outlined" onPress={() => router.push("./register")} style={styles.button}>
         Sign Up
       </Button>
     </View>

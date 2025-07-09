@@ -26,12 +26,7 @@ export default function GroceryListScreen() {
         Grocery List
       </Text>
 
-      <TextInput
-        label="Add Item"
-        value={item}
-        onChangeText={setItem}
-        style={styles.input}
-      />
+      <TextInput label="Add Item" value={item} onChangeText={setItem} style={styles.input} />
 
       <Button mode="contained" onPress={addItem} style={styles.addButton}>
         Add
@@ -47,11 +42,7 @@ export default function GroceryListScreen() {
             <List.Item
               title={item}
               right={() => (
-                <IconButton
-                  icon="delete"
-                  onPress={() => removeItem(index)}
-                  accessibilityLabel={`Delete ${item}`}
-                />
+                <IconButton icon="delete" onPress={() => removeItem(index)} accessibilityLabel={`Delete ${item}`} />
               )}
             />
           )}
