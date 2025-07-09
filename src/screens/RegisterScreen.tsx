@@ -20,20 +20,12 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Text variant="headlineMedium" style={styles.title}>
         Create Account
       </Text>
 
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        mode="outlined"
-      />
+      <TextInput label="Email" value={email} onChangeText={setEmail} style={styles.input} mode="outlined" />
       <TextInput
         label="Password"
         value={password}
