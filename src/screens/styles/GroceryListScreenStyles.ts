@@ -5,6 +5,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     paddingTop: 60,
+    width: "100%",
+    maxWidth: 1000,
+    alignSelf: "center",
   },
   headline: {
     marginBottom: 20,
