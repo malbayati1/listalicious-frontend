@@ -16,7 +16,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <Text variant="headlineMedium" style={styles.title}>
         Welcome Back
       </Text>

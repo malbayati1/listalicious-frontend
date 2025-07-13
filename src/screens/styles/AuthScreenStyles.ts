@@ -6,6 +6,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     alignItems: "center",
+    width: "100%",
+    maxWidth: 1000,
+    alignSelf: "center",
   },
   title: {
     marginBottom: 16,

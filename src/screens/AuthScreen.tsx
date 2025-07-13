@@ -8,7 +8,7 @@ export default function Index() {
   const theme = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <Text variant="displayLarge" style={styles.title}>
         Listalicious!
       </Text>

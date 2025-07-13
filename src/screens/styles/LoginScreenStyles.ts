@@ -5,9 +5,13 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: "center",
+    width: "100%",
+    maxWidth: 1000,
+    alignSelf: "center",
   },
   title: {
     marginBottom: 32,
+    textAlign: "center",
   },
   input: {
     marginBottom: 16,
