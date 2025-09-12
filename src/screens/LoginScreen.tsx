@@ -1,26 +1,28 @@
 import React, { useState, useRef } from "react";
 import { View, Keyboard, TouchableWithoutFeedback, Platform } from "react-native";
 import { Text, Button, TextInput } from "react-native-paper";
-import { login } from "../api/authApi";
+import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
 import styles from "./styles/LoginScreenStyles";
+import { saveToken } from "../utils/tokenStorage";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const passwordRef = useRef(null);
+  const { login } = useAuth();
 
   const handleLogin = () => {
+    if (!email || !password) {
+      alert('Error: Please enter both email and password.');
+      return;
+    }
+
     const loginData = async () => {
       try {
-        const req = {
-          grant_type: "password",
-          username: email,
-          password: password,
-        };
-        const res = await login(req);
+        const res = await login(email, password);
         console.log("Login successful:", res);
-        router.replace("./GroceryList");
+        router.replace("/(app)");
       } catch (error) {
         console.error("Login failed:", error);
         alert("Login failed. Please try again." + error);

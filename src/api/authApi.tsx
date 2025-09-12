@@ -1,11 +1,11 @@
 import { LoginData } from "../types/LoginData";
 import { RegisterData } from "../types/RegisterData";
 import { User } from "../types/User";
-import apiClient from "./authClient";
+import apiClient, { setInMemoryToken } from "./authClient";
 
 interface AuthResponse {
   user: User;
-  token: string;
+  access_token: string;
 }
 
 function toUrlEncoded(data: Record<string, string>): string {
@@ -22,7 +22,7 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
 };
 
 export const login = async (credentials: LoginData): Promise<AuthResponse> => {
-  const { grant_type, username, password } = credentials
+  const { grant_type, username, password } = credentials;
 
   const formData = toUrlEncoded({
     grant_type,
@@ -35,5 +35,9 @@ export const login = async (credentials: LoginData): Promise<AuthResponse> => {
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
+
+  if (response.data?.access_token) {
+    setInMemoryToken(response.data.access_token);
+  }
   return response.data;
 };

@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { View, FlatList } from "react-native";
 import { TextInput, Button, List, IconButton, Text } from "react-native-paper";
 import styles from "./styles/GroceryListScreenStyles";
+import { useAuth } from "../context/AuthContext";
+import { router } from "expo-router";
 
 export default function GroceryListScreen() {
   const [item, setItem] = useState("");
   const [items, setItems] = useState<string[]>([]);
+  const { logout } = useAuth();
 
   const addItem = () => {
     if (item) {
@@ -20,8 +23,17 @@ export default function GroceryListScreen() {
     setItems(updatedItems);
   };
 
+  const onLogout = async () => {
+    await logout();
+    router.replace("/(auth)");
+  }
+
   return (
     <View style={styles.container}>
+      <Button mode="contained" onPress={onLogout} style={styles.addButton}>
+        logout
+      </Button>
+      
       <Text variant="headlineSmall" style={styles.headline}>
         Grocery List
       </Text>
