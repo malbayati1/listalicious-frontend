@@ -1,12 +1,10 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Text, Button, useTheme } from "react-native-paper";
+import { View } from "react-native";
+import { Text, Button } from "react-native-paper";
 import { router } from "expo-router";
 import styles from "./styles/AuthScreenStyles";
 
 export default function Index() {
-  const theme = useTheme();
-
   return (
     <View style={styles.container}>
       <Text variant="displayLarge" style={styles.title}>
