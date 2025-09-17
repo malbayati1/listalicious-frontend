@@ -26,14 +26,14 @@ export default function GroceryListScreen() {
   const onLogout = async () => {
     await logout();
     router.replace("/(auth)");
-  }
+  };
 
   return (
     <View style={styles.container}>
       <Button mode="contained" onPress={onLogout} style={styles.addButton}>
         logout
       </Button>
-      
+
       <Text variant="headlineSmall" style={styles.headline}>
         Grocery List
       </Text>

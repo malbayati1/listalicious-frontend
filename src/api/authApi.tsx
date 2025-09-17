@@ -36,7 +36,7 @@ export const login = async (credentials: LoginData): Promise<AuthResponse> => {
     },
   });
 
-  if (response.data?.access_token) {
+  if (response.data.access_token) {
     setInMemoryToken(response.data.access_token);
   }
   return response.data;

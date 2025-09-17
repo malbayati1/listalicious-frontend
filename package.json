@@ -2,15 +2,20 @@
   "name": "listalicious",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@eslint/js": "^9.35.0",
     "@expo/vector-icons": "^14.1.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
@@ -25,6 +30,7 @@
     "expo-image": "~2.1.7",
     "expo-linking": "~7.1.5",
     "expo-router": "~5.0.6",
+    "expo-secure-store": "~14.2.3",
     "expo-splash-screen": "~0.30.8",
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.4",
@@ -42,7 +48,7 @@
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "react-navigation": "^5.0.0",
-    "expo-secure-store": "~14.2.3"
+    "typescript-eslint": "^8.44.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

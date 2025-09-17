@@ -4,7 +4,6 @@ import { Text, Button, TextInput } from "react-native-paper";
 import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
 import styles from "./styles/LoginScreenStyles";
-import { saveToken } from "../utils/tokenStorage";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -14,7 +13,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (!email || !password) {
-      alert('Error: Please enter both email and password.');
+      alert("Error: Please enter both email and password.");
       return;
     }
 
@@ -29,7 +28,7 @@ export default function LoginScreen() {
       }
     };
     loginData();
-  }
+  };
 
   const content = (
     <View style={styles.container}>
@@ -48,7 +47,8 @@ export default function LoginScreen() {
         returnKeyType="next"
         onSubmitEditing={
           Platform.OS === "ios" || Platform.OS === "android"
-            ? () => passwordRef.current && (passwordRef.current as any).focus()
+            ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+              () => passwordRef.current && (passwordRef.current as any).focus()
             : handleLogin
         }
       />
