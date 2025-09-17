@@ -37,6 +37,8 @@ export default function RegisterScreen() {
     registerData();
   };
 
+  const isNative = Platform.OS === "ios" || Platform.OS === "android";
+
   const content = (
     <View style={styles.container}>
       <Text variant="headlineMedium" style={styles.title}>
@@ -54,7 +56,8 @@ export default function RegisterScreen() {
         returnKeyType="next"
         onSubmitEditing={
           Platform.OS === "ios" || Platform.OS === "android"
-            ? () => passwordRef.current && (passwordRef.current as any).focus()
+            ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+              () => passwordRef.current && (passwordRef.current as any).focus()
             : handleRegister
         }
       />
@@ -70,7 +73,8 @@ export default function RegisterScreen() {
         returnKeyType="next"
         onSubmitEditing={
           Platform.OS === "ios" || Platform.OS === "android"
-            ? () => confirmPasswordRef.current && (confirmPasswordRef.current as any).focus()
+            ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+              () => confirmPasswordRef.current && (confirmPasswordRef.current as any).focus()
             : handleRegister
         }
       />
