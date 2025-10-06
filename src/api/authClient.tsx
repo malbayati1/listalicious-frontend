@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { getToken } from "../utils/tokenStorage";
 
-const API_BASE_URL = __DEV__ ? "http://192.168.50.207:8000" : "https://prod"; // TODO: set your real prod API base
+const API_BASE_URL = process.env.API_URL; // TODO: set your real prod API base
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
