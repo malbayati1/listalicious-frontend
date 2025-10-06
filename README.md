@@ -34,7 +34,7 @@ npm install
 ### 🌍 Web
 
 ```bash
-npm run web
+npm run start
 ```
 
 - Opens in your browser (uses React DOM under the hood)
@@ -43,9 +43,7 @@ npm run web
 
 ### 📱 iOS (No Mac Required)
 
-```bash
-npm run iOS
-```
+When you do npm run start, follow the instructions display to run on iOS. A QR code should pop up that you can scan with your camera 
 
 1. Install the **Expo Go** app from the App Store on your iPhone.
 2. Scan the QR code shown in your terminal or browser with your camera.
@@ -57,9 +55,7 @@ npm run iOS
 
 ### 🤖 Android
 
-```bash
-npm run Android
-```
+Same as the iOS. Use the Expo Go app to scan the QR code.
 
 1. Install **Expo Go** from the Play Store.
 2. Scan the QR code with Expo Go.
