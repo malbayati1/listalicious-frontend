@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /e/listalicious/listalicious-frontend -not -path */node_modules/* -not -path */.expo/* -not -path */.next/* -type d)"
+    ]
+  }
+}
