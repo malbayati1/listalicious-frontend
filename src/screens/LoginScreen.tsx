@@ -1,78 +1,109 @@
-import React, { useState, useRef } from "react";
-import { View, Keyboard, TouchableWithoutFeedback, Platform } from "react-native";
-import { Text, Button, TextInput } from "react-native-paper";
-import { useAuth } from "../context/AuthContext";
+import React, { useRef, useState } from "react";
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import styles from "./styles/LoginScreenStyles";
+import { useAuth } from "../context/AuthContext";
+import BackButton from "../components/BackButton";
+import AuthTextField from "../components/AuthTextField";
+import PrimaryButton from "../components/PrimaryButton";
+import styles from "./styles/AuthFormScreenStyles";
 
 export default function LoginScreen() {
+  const insets = useSafeAreaInsets();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const passwordRef = useRef(null);
-  const { login } = useAuth();
+  const [emailError, setEmailError] = useState<string | undefined>();
+  const [passwordError, setPasswordError] = useState<string | undefined>();
+  const [formError, setFormError] = useState<string | undefined>();
+  const [loading, setLoading] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   const handleLogin = () => {
-    if (!email || !password) {
-      alert("Error: Please enter both email and password.");
+    const trimmedEmail = email.trim();
+    setEmailError(undefined);
+    setPasswordError(undefined);
+    setFormError(undefined);
+
+    let hasError = false;
+    if (!trimmedEmail) {
+      setEmailError("Enter your email");
+      hasError = true;
+    }
+    if (!password) {
+      setPasswordError("Enter your password");
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
 
-    const loginData = async () => {
+    const submit = async () => {
+      setLoading(true);
       try {
-        const res = await login(email, password);
-        console.log("Login successful:", res);
+        await login(trimmedEmail, password);
         router.replace("/(app)");
       } catch (error) {
         console.error("Login failed:", error);
-        alert("Login failed. Please try again." + error);
+        setFormError("Couldn't log you in. Check your email and password.");
+      } finally {
+        setLoading(false);
       }
     };
-    loginData();
+    submit();
   };
 
   const content = (
-    <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.title}>
-        Welcome Back
-      </Text>
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
+      <StatusBar style="light" />
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <View style={styles.content}>
+          <BackButton />
 
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        mode="outlined"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        returnKeyType="next"
-        onSubmitEditing={
-          Platform.OS === "ios" || Platform.OS === "android"
-            ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-              () => passwordRef.current && (passwordRef.current as any).focus()
-            : handleLogin
-        }
-      />
-      <TextInput
-        ref={passwordRef}
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-        mode="outlined"
-        autoCapitalize="none"
-        returnKeyType="done"
-        onSubmitEditing={handleLogin}
-      />
+          <View style={styles.form}>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={[styles.subtitle, { marginBottom: 32 }]}>The fridge missed you.</Text>
 
-      <Button mode="contained" onPress={handleLogin} style={styles.button}>
-        Log In
-      </Button>
+            <AuthTextField
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              returnKeyType="next"
+              error={emailError}
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              style={{ marginBottom: 18 }}
+            />
+            <AuthTextField
+              ref={passwordRef}
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              returnKeyType="done"
+              error={passwordError}
+              onSubmitEditing={handleLogin}
+            />
 
-      <Button onPress={() => router.push("./register")} style={styles.link}>
-        Don't have an account? Sign up
-      </Button>
-    </View>
+            <Text style={styles.forgotPassword}>Forgot password?</Text>
+
+            {formError ? <Text style={styles.formError}>{formError}</Text> : null}
+          </View>
+
+          <View style={[styles.footer, { paddingBottom: 44 + insets.bottom }]}>
+            <PrimaryButton label="Log in" onPress={handleLogin} loading={loading} style={{ marginBottom: 16 }} />
+            <Pressable onPress={() => router.push("./register")}>
+              <Text style={styles.footerText}>
+                No account yet? <Text style={styles.footerTextStrong}>Sign up</Text>
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 
   if (Platform.OS === "ios" || Platform.OS === "android") {
