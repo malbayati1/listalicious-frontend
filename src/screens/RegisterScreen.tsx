@@ -23,9 +23,16 @@ export default function RegisterScreen() {
         const res = await registerUser(req);
         console.log("Registration successful:", res);
         router.replace("./login");
-      } catch (error) {
+      } catch (error: any) {
+        const detail = error?.response?.data?.detail;
+        let message = "Registration failed. Please try again.";
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          message = detail.map((d: any) => d.msg ?? d).join("\n");
+        }
         console.error("Registration failed:", error);
-        alert("Registration failed. Please try again.");
+        alert(message);
       }
     };
 

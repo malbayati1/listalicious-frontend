@@ -1,7 +1,15 @@
 import axios, { AxiosError } from "axios";
 import { getToken } from "../utils/tokenStorage";
 
-const API_BASE_URL = process.env.API_URL; // TODO: set your real prod API base
+const API_BASE_URL = (process.env.API_URL || "http://localhost:8000") + "/v1";
+
+if (!process.env.API_URL) {
+  // Helpful debug message when running locally without env var
+  // eslint-disable-next-line no-console
+  console.warn(
+    "API_URL environment variable is not set. Falling back to http://localhost:8000"
+  );
+}
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
