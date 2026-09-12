@@ -98,6 +98,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.faint,
   },
+  sheetTitle: {
+    fontFamily: fonts.outfit600,
+    fontSize: 22,
+    letterSpacing: -0.44,
+    color: colors.ink,
+    marginBottom: 18,
+  },
+  sheetInput: {
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 18,
+    fontFamily: fonts.outfit500,
+    fontSize: 17,
+    color: colors.ink,
+    marginBottom: 18,
+  },
+  sheetError: {
+    fontFamily: fonts.outfit400,
+    fontSize: 13,
+    color: colors.danger,
+    marginTop: -10,
+    marginBottom: 16,
+  },
 });
 
 export default styles;

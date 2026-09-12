@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { registerUser } from "../api/authApi";
 import BackButton from "../components/BackButton";
 import AuthTextField from "../components/AuthTextField";
@@ -26,6 +26,7 @@ const isPasswordValid = (password: string) => password.length >= 8 && /\d/.test(
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +65,7 @@ export default function RegisterScreen() {
       try {
         const res = await registerUser({ email: trimmedEmail, username: trimmedName, password });
         console.log("Registration successful:", res);
-        router.replace("./login");
+        router.replace({ pathname: "./login", params: next ? { next } : undefined });
       } catch (error) {
         console.error("Registration failed:", error);
         setFormError(parseRegisterError(error));
@@ -130,7 +131,7 @@ export default function RegisterScreen() {
 
           <View style={[styles.footer, { paddingBottom: 44 + insets.bottom }]}>
             <PrimaryButton label="Create account" onPress={handleRegister} loading={loading} style={{ marginBottom: 16 }} />
-            <Pressable onPress={() => router.push("./login")}>
+            <Pressable onPress={() => router.push({ pathname: "./login", params: next ? { next } : undefined })}>
               <Text style={styles.footerText}>
                 Already have one? <Text style={styles.footerTextStrong}>Log in</Text>
               </Text>

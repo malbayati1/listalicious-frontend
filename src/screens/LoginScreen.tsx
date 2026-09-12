@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import BackButton from "../components/BackButton";
 import AuthTextField from "../components/AuthTextField";
@@ -11,6 +11,7 @@ import styles from "./styles/AuthFormScreenStyles";
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +44,8 @@ export default function LoginScreen() {
       setLoading(true);
       try {
         await login(trimmedEmail, password);
-        router.replace("/(app)");
+        const destination = next && next.startsWith("/") ? next : "/(app)";
+        router.replace(destination as unknown as Parameters<typeof router.replace>[0]);
       } catch (error) {
         console.error("Login failed:", error);
         setFormError("Couldn't log you in. Check your email and password.");
@@ -95,7 +97,9 @@ export default function LoginScreen() {
 
           <View style={[styles.footer, { paddingBottom: 44 + insets.bottom }]}>
             <PrimaryButton label="Log in" onPress={handleLogin} loading={loading} style={{ marginBottom: 16 }} />
-            <Pressable onPress={() => router.push("./register")}>
+            <Pressable
+              onPress={() => router.push({ pathname: "./register", params: next ? { next } : undefined })}
+            >
               <Text style={styles.footerText}>
                 No account yet? <Text style={styles.footerTextStrong}>Sign up</Text>
               </Text>
