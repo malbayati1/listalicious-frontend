@@ -1,25 +1,47 @@
 import React from "react";
-import { View } from "react-native";
-import { Text, Button } from "react-native-paper";
+import { View, Text, Pressable } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import styles from "./styles/AuthScreenStyles";
+import styles from "./styles/WelcomeScreenStyles";
 
-export default function Index() {
+export default function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
-      <Text variant="displayLarge" style={styles.title}>
-        Listalicious!
-      </Text>
-      <Text variant="bodyLarge" style={styles.subtitle}>
-        Manage your groceries with ease!
-      </Text>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar style="light" />
+      <View style={[styles.content, { paddingBottom: 48 + insets.bottom }]}>
+        <View style={styles.hero}>
+          <View style={styles.swatchRow}>
+            <View style={[styles.swatch, styles.swatchMint]} />
+            <View style={[styles.swatch, styles.swatchApricot]} />
+            <View style={[styles.swatch, styles.swatchNeutral]} />
+          </View>
+          <Text style={styles.title}>Listalicious</Text>
+          <Text style={styles.subtitle}>One list. Everyone in the house. Watch it empty in real time.</Text>
+        </View>
 
-      <Button mode="contained" onPress={() => router.push("./login")} style={styles.button}>
-        Log In
-      </Button>
-      <Button mode="outlined" onPress={() => router.push("./register")} style={styles.button}>
-        Sign Up
-      </Button>
-    </View>
+        <View style={styles.buttons}>
+          <Pressable
+            onPress={() => router.push("./register")}
+            style={({ pressed }) => [styles.buttonPrimary, pressed && styles.buttonPrimaryPressed]}
+          >
+            <Text style={styles.buttonPrimaryLabel}>Start a list</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("./login")}
+            style={({ pressed }) => [styles.buttonSecondary, pressed && styles.buttonSecondaryPressed]}
+          >
+            <Text style={styles.buttonSecondaryLabel}>I already have an account</Text>
+          </Pressable>
+
+          <Pressable onPress={() => router.push("./login")} style={styles.buttonText}>
+            <Text style={styles.buttonTextLabel}>Someone sent me an invite link</Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
