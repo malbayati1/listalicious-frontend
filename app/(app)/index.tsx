@@ -1,5 +1,5 @@
-import GroceryListScreen from "@/src/screens/GroceryListScreen";
+import ListsHomeScreen from "@/src/screens/ListsHomeScreen";
 
-export default function GroceryListPage() {
-  return <GroceryListScreen />;
+export default function ListsHomePage() {
+  return <ListsHomeScreen />;
 }

@@ -3,42 +3,42 @@ import { View, FlatList, Alert } from "react-native";
 import { TextInput, Button, List, IconButton, Text, Checkbox, ActivityIndicator } from "react-native-paper";
 import styles from "./styles/GroceryListScreenStyles";
 import { useAuth } from "../context/AuthContext";
-import { router } from "expo-router";
-import { getLists, createList, getItems, addItem, deleteItem, toggleItem } from "../api/listApi";
+import { router, useLocalSearchParams } from "expo-router";
+import { getItems, addItem, deleteItem, toggleItem } from "../api/listApi";
 import { Item } from "../types/Item";
 
 export default function GroceryListScreen() {
+  const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
   const [itemName, setItemName] = useState("");
   const [items, setItems] = useState<Item[]>([]);
-  const [listId, setListId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const { logout } = useAuth();
 
   const initList = useCallback(async () => {
+    if (!id) {
+      return;
+    }
     setLoading(true);
     try {
-      const lists = await getLists();
-      const list = lists.length > 0 ? lists[0] : await createList("My List");
-      setListId(list._id);
-      const fetchedItems = await getItems(list._id);
+      const fetchedItems = await getItems(id);
       setItems(fetchedItems);
     } catch {
       Alert.alert("Error", "Could not load your grocery list.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     initList();
   }, [initList]);
 
   const handleAddItem = async () => {
-    if (!itemName.trim() || !listId) return;
+    if (!itemName.trim() || !id) return;
     setAdding(true);
     try {
-      const newItem = await addItem(listId, itemName.trim());
+      const newItem = await addItem(id, itemName.trim());
       setItems((prev) => [...prev, newItem]);
       setItemName("");
     } catch {
@@ -49,10 +49,10 @@ export default function GroceryListScreen() {
   };
 
   const handleDeleteItem = async (item: Item) => {
-    if (!listId) return;
+    if (!id) return;
     setItems((prev) => prev.filter((i) => i._id !== item._id));
     try {
-      await deleteItem(listId, item._id);
+      await deleteItem(id, item._id);
     } catch {
       setItems((prev) => [...prev, item]);
       Alert.alert("Error", "Could not delete item.");
@@ -60,10 +60,10 @@ export default function GroceryListScreen() {
   };
 
   const handleToggleItem = async (item: Item) => {
-    if (!listId) return;
+    if (!id) return;
     setItems((prev) => prev.map((i) => (i._id === item._id ? { ...i, is_checked: !i.is_checked } : i)));
     try {
-      await toggleItem(listId, item._id, !item.is_checked);
+      await toggleItem(id, item._id, !item.is_checked);
     } catch {
       setItems((prev) => prev.map((i) => (i._id === item._id ? { ...i, is_checked: item.is_checked } : i)));
       Alert.alert("Error", "Could not update item.");
@@ -85,12 +85,16 @@ export default function GroceryListScreen() {
 
   return (
     <View style={styles.container}>
+      <Button onPress={() => router.back()} style={styles.backButton}>
+        Back to lists
+      </Button>
+
       <Button mode="contained" onPress={onLogout} style={styles.addButton}>
         logout
       </Button>
 
       <Text variant="headlineSmall" style={styles.headline}>
-        Grocery List
+        {title ?? "Grocery List"}
       </Text>
 
       <TextInput

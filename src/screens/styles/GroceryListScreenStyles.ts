@@ -9,6 +9,10 @@ const styles = StyleSheet.create({
     maxWidth: 1000,
     alignSelf: "center",
   },
+  backButton: {
+    alignSelf: "flex-start",
+    marginBottom: 8,
+  },
   headline: {
     marginBottom: 20,
   },
