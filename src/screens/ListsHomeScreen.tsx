@@ -60,11 +60,11 @@ async function summarizeLists(lists: GroceryList[], selfId: string | undefined):
 
 export default function ListsHomeScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [lists, setLists] = useState<ListSummary[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | undefined>();
-  const [sheetMode, setSheetMode] = useState<"none" | "newList" | "logout">("none");
+  const [sheetMode, setSheetMode] = useState<"none" | "newList">("none");
   const [newListName, setNewListName] = useState("");
   const [newListError, setNewListError] = useState<string | undefined>();
   const [creating, setCreating] = useState(false);
@@ -125,14 +125,6 @@ export default function ListsHomeScreen() {
     submit();
   };
 
-  const handleLogout = () => {
-    const submit = async () => {
-      await logout();
-      router.replace("/(auth)");
-    };
-    submit();
-  };
-
   const selfInitial = user?.username || user?.email || "?";
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
@@ -167,7 +159,11 @@ export default function ListsHomeScreen() {
               >
                 <ClockIcon size={18} color={colors.ink} />
               </Pressable>
-              <Pressable onPress={() => setSheetMode("logout")} style={({ pressed }) => pressed && styles.headerAvatarPressed}>
+              <Pressable
+                testID="profile-avatar-button"
+                onPress={() => router.push("/profile")}
+                style={({ pressed }) => pressed && styles.headerAvatarPressed}
+              >
                 <Avatar label={selfInitial} size={42} radius={15} fontSize={17} />
               </Pressable>
             </View>
@@ -265,17 +261,6 @@ export default function ListsHomeScreen() {
         />
         {newListError ? <Text style={styles.sheetError}>{newListError}</Text> : null}
         <PrimaryButton label="Create list" onPress={handleCreateList} loading={creating} />
-      </BottomSheet>
-
-      <BottomSheet visible={sheetMode === "logout"} onClose={() => setSheetMode("none")}>
-        <Text style={styles.sheetTitle}>Log out?</Text>
-        <Text style={styles.logoutSheetBody}>You'll need your email and password to sign back in.</Text>
-        <Pressable style={styles.logoutConfirm} onPress={handleLogout}>
-          <Text style={styles.logoutConfirmLabel}>Log out</Text>
-        </Pressable>
-        <Pressable style={styles.logoutCancel} onPress={() => setSheetMode("none")}>
-          <Text style={styles.logoutCancelLabel}>Cancel</Text>
-        </Pressable>
       </BottomSheet>
     </SafeAreaView>
   );

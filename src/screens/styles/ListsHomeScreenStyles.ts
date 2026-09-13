@@ -190,39 +190,6 @@ const styles = StyleSheet.create({
     marginTop: -10,
     marginBottom: 16,
   },
-  logoutSheetBody: {
-    fontFamily: fonts.outfit400,
-    fontSize: 15,
-    color: colors.muted,
-    marginBottom: 22,
-  },
-  logoutConfirm: {
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  logoutCancel: {
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceRaised,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutCancelLabel: {
-    fontFamily: fonts.outfit500,
-    fontSize: 15,
-    color: colors.ink,
-  },
-  logoutConfirmLabel: {
-    fontFamily: fonts.outfit500,
-    fontSize: 15,
-    color: colors.danger,
-  },
 });
 
 export default styles;
