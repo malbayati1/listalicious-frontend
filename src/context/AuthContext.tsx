@@ -11,6 +11,7 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -74,7 +75,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  const value = useMemo(() => ({ token, isBootstrapping, user, login, logout }), [token, isBootstrapping, user]);
+  const refreshUser = async () => {
+    const me = await getMe();
+    setUser(me);
+  };
+
+  const value = useMemo(
+    () => ({ token, isBootstrapping, user, login, logout, refreshUser }),
+    [token, isBootstrapping, user]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
