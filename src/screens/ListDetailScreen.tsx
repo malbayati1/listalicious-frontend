@@ -1,14 +1,16 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { router, useLocalSearchParams } from "expo-router";
+import { useAudioPlayer } from "expo-audio";
 import { addItem, checkItem, clearCheckedItems, deleteItem, getItems, updateItem } from "../api/listApi";
 import { Item } from "../types/Item";
 import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
+import Confetti from "../components/Confetti";
 import CheckIcon from "../components/icons/CheckIcon";
 import PlusIcon from "../components/icons/PlusIcon";
 import { colors } from "../theme/tokens";
@@ -37,6 +39,10 @@ export default function ListDetailScreen() {
   const [draftError, setDraftError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
 
+  const [celebrationTrigger, setCelebrationTrigger] = useState(0);
+  const wasAllDone = useRef(false);
+  const chimePlayer = useAudioPlayer(require("../../assets/sounds/success-chime.wav"));
+
   const load = useCallback(async () => {
     if (!id) {
       return;
@@ -61,6 +67,16 @@ export default function ListDetailScreen() {
   const done = items?.filter((item) => item.is_checked).length ?? 0;
   const progress = total > 0 ? done / total : 0;
   const allDone = total > 0 && done === total;
+
+  useEffect(() => {
+    if (allDone && !wasAllDone.current) {
+      setCelebrationTrigger((n) => n + 1);
+      chimePlayer.seekTo(0);
+      chimePlayer.play();
+    }
+    wasAllDone.current = allDone;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allDone]);
 
   const handleToggle = (item: Item) => {
     if (!id || !items) {
@@ -330,6 +346,8 @@ export default function ListDetailScreen() {
           </Pressable>
         ) : null}
       </BottomSheet>
+
+      <Confetti trigger={celebrationTrigger} />
     </SafeAreaView>
   );
 }

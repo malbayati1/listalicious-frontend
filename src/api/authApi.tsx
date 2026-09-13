@@ -46,3 +46,11 @@ export const getMe = async (): Promise<User> => {
   const response = await apiClient.get<User>("/auth/me");
   return response.data;
 };
+
+export const requestEmailVerification = async (): Promise<void> => {
+  await apiClient.post("/auth/request-email-verification");
+};
+
+export const verifyEmail = async (token: string): Promise<void> => {
+  await apiClient.post("/auth/verify-email", { token });
+};

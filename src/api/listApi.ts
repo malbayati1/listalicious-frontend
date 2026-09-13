@@ -57,33 +57,48 @@ export type NewItemData = {
   note?: string;
 };
 
+// The backend serializes Item's id field inconsistently across routes: GET
+// list_items manually calls .model_dump() (no alias) and gives "id", while
+// create/update/check return the Pydantic model directly, which FastAPI
+// serializes with response_model_by_alias's default of true and gives "_id".
+// Normalize every item response here so the rest of the app only ever sees `id`.
+type RawItem = Omit<Item, "id"> & { id?: string; _id?: string };
+
+function normalizeItem(raw: RawItem): Item {
+  const id = raw.id ?? raw._id;
+  if (!id) {
+    throw new Error("Item response is missing an id");
+  }
+  return { ...raw, id };
+}
+
 export const getItems = async (listId: string): Promise<Item[]> => {
-  const response = await apiClient.get<Item[]>(`/lists/${listId}/items`);
-  return response.data;
+  const response = await apiClient.get<RawItem[]>(`/lists/${listId}/items`);
+  return response.data.map(normalizeItem);
 };
 
 export const addItem = async (listId: string, data: NewItemData): Promise<Item> => {
-  const response = await apiClient.post<Item>(`/lists/${listId}/items`, {
+  const response = await apiClient.post<RawItem>(`/lists/${listId}/items`, {
     name: data.name,
     quantity: data.quantity,
     note: data.note || undefined,
     is_checked: false,
   });
-  return response.data;
+  return normalizeItem(response.data);
 };
 
 export const updateItem = async (listId: string, itemId: string, data: NewItemData): Promise<Item> => {
-  const response = await apiClient.put<Item>(`/lists/${listId}/items/${itemId}`, {
+  const response = await apiClient.put<RawItem>(`/lists/${listId}/items/${itemId}`, {
     name: data.name,
     quantity: data.quantity,
     note: data.note || undefined,
   });
-  return response.data;
+  return normalizeItem(response.data);
 };
 
 export const checkItem = async (listId: string, itemId: string): Promise<Item> => {
-  const response = await apiClient.patch<Item>(`/lists/${listId}/items/${itemId}/check`);
-  return response.data;
+  const response = await apiClient.patch<RawItem>(`/lists/${listId}/items/${itemId}/check`);
+  return normalizeItem(response.data);
 };
 
 export const deleteItem = async (listId: string, itemId: string): Promise<void> => {
