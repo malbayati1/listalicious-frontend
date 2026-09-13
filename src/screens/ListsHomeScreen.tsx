@@ -9,7 +9,6 @@ import { createList, getItems, getLists, getSharedUsers, SharedUser } from "../a
 import { GroceryList } from "../types/GroceryList";
 import Avatar from "../components/Avatar";
 import ProgressRing from "../components/ProgressRing";
-import ClockIcon from "../components/icons/ClockIcon";
 import PlusIcon from "../components/icons/PlusIcon";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
@@ -144,7 +143,7 @@ export default function ListsHomeScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + insets.bottom }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}
           refreshControl={<RefreshControl tintColor={colors.mint} refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <View style={styles.header}>
@@ -152,21 +151,13 @@ export default function ListsHomeScreen() {
               <Text style={styles.headerDate}>{today}</Text>
               <Text style={styles.headerTitle}>Your lists</Text>
             </View>
-            <View style={styles.headerActions}>
-              <Pressable
-                onPress={() => router.push("/activity")}
-                style={({ pressed }) => [styles.headerIconButton, pressed && styles.headerIconButtonPressed]}
-              >
-                <ClockIcon size={18} color={colors.ink} />
-              </Pressable>
-              <Pressable
-                testID="profile-avatar-button"
-                onPress={() => router.push("/profile")}
-                style={({ pressed }) => pressed && styles.headerAvatarPressed}
-              >
-                <Avatar label={selfInitial} size={42} radius={15} fontSize={17} />
-              </Pressable>
-            </View>
+            <Pressable
+              testID="profile-avatar-button"
+              onPress={() => router.push("/profile")}
+              style={({ pressed }) => pressed && styles.headerAvatarPressed}
+            >
+              <Avatar label={selfInitial} size={42} radius={15} fontSize={17} />
+            </Pressable>
           </View>
 
           {lists && lists.length === 0 ? (

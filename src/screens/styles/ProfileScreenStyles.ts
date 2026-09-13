@@ -6,14 +6,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  header: {
-    paddingHorizontal: 22,
-    paddingBottom: 8,
-  },
-
   scrollContent: {
     paddingHorizontal: 22,
-    paddingTop: 8,
+    paddingTop: 22,
   },
 
   profileRow: {

@@ -7,6 +7,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useAudioPlayer } from "expo-audio";
 import { addItem, checkItem, clearCheckedItems, deleteItem, getItems, updateItem } from "../api/listApi";
 import { Item } from "../types/Item";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
@@ -28,6 +30,9 @@ type SheetState =
 
 export default function ListDetailScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const selfInitial = user?.username || user?.email || "?";
   const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
   const [items, setItems] = useState<Item[] | null>(null);
   const [loadError, setLoadError] = useState<string | undefined>();
@@ -126,6 +131,7 @@ export default function ListDetailScreen() {
         if (sheet.mode === "add") {
           const created = await addItem(id, { name: trimmedName, quantity: draftQty, note: draftNote.trim() });
           setItems((current) => (current ? [...current, created] : [created]));
+          showToast(`Added ${created.name}`, selfInitial);
         } else {
           const updated = await updateItem(id, sheet.item.id, {
             name: trimmedName,
@@ -133,6 +139,7 @@ export default function ListDetailScreen() {
             note: draftNote.trim(),
           });
           setItems((current) => (current ? current.map((i) => (i.id === updated.id ? updated : i)) : current));
+          showToast(`Updated ${updated.name}`, selfInitial);
         }
         closeSheet();
       } catch (error) {
@@ -150,11 +157,13 @@ export default function ListDetailScreen() {
       return;
     }
     const itemId = sheet.item.id;
+    const itemName = sheet.item.name;
     const submit = async () => {
       setSaving(true);
       try {
         await deleteItem(id, itemId);
         setItems((current) => (current ? current.filter((i) => i.id !== itemId) : current));
+        showToast(`Removed ${itemName}`, selfInitial);
         closeSheet();
       } catch (error) {
         console.error("Failed to remove item:", error);

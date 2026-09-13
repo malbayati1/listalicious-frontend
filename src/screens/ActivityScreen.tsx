@@ -5,7 +5,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../context/AuthContext";
 import { ActivityEntry, getListActivity, getLists, getSharedUsers } from "../api/listApi";
-import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
 import { colors } from "../theme/tokens";
 import styles from "./styles/ActivityScreenStyles";
@@ -164,7 +163,6 @@ export default function ActivityScreen() {
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <BackButton />
         <Text style={styles.title}>Activity</Text>
         <Text style={styles.subtitle}>Every tick, every addition, as it happens.</Text>
       </View>
@@ -174,7 +172,7 @@ export default function ActivityScreen() {
           <Text style={styles.emptyText}>Nothing here yet. Once you add or tick something off, it'll show up here.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + insets.bottom }]}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}>
           {feed.map((entry, index) => {
             const displayName = nameByEmail.get(entry.user_email) ?? entry.user_email;
             const isSelf = user?.email === entry.user_email;

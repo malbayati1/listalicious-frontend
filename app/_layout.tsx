@@ -11,6 +11,7 @@ import {
 } from "@expo-google-fonts/outfit";
 import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider } from "@/src/context/AuthContext";
+import { ToastProvider } from "@/src/context/ToastContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,7 +38,9 @@ export default function Layout() {
 
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <ToastProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ToastProvider>
     </AuthProvider>
   );
 }

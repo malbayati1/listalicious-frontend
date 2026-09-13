@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { StatusBar } from "expo-status-bar";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { getLists, joinListByToken } from "../api/listApi";
 import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
@@ -21,12 +22,13 @@ function truncateToken(token: string): string {
 export default function JoinScreen() {
   const insets = useSafeAreaInsets();
   const { token } = useLocalSearchParams<{ token: string }>();
-  const { token: authToken, isBootstrapping } = useAuth();
+  const { token: authToken, user, isBootstrapping } = useAuth();
+  const { showToast } = useToast();
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
   const goAway = () => {
-    router.replace(authToken ? "/(app)" : "/(auth)");
+    router.replace(authToken ? "/(app)/(tabs)" : "/(auth)");
   };
 
   const handleJoin = () => {
@@ -44,10 +46,13 @@ export default function JoinScreen() {
         await joinListByToken(token);
         const after = await getLists();
         const joinedList = after.find((list) => !beforeIds.has(list._id));
+        const selfInitial = user?.username || user?.email || "?";
         if (joinedList) {
+          showToast(`You're in! Welcome to ${joinedList.title}`, selfInitial);
           router.replace({ pathname: "/(app)/list/[id]", params: { id: joinedList._id, title: joinedList.title } });
         } else {
-          router.replace("/(app)");
+          showToast("You're in!", selfInitial);
+          router.replace("/(app)/(tabs)");
         }
       } catch (err) {
         console.error("Failed to join list:", err);

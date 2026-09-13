@@ -5,7 +5,6 @@ import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
 import { changeEmail, confirmEmailChange, logoutAllDevices } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
-import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
 import ChevronRightIcon from "../components/icons/ChevronRightIcon";
@@ -127,11 +126,8 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar style="light" />
-      <View style={styles.header}>
-        <BackButton />
-      </View>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + insets.bottom }]}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}>
         <View style={styles.profileRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarLabel}>{displayName.slice(0, 1).toUpperCase()}</Text>

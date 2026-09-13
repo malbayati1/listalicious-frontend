@@ -9,7 +9,7 @@ export default function AppLayout() {
   }
 
   if (token) {
-    return <Redirect href="/(app)" />;
+    return <Redirect href="/(app)/(tabs)" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;
