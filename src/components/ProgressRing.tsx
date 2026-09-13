@@ -9,6 +9,8 @@ type Props = {
   progress: number;
   color?: string;
   trackColor?: string;
+  labelFontSize?: number;
+  labelSuffix?: string;
 };
 
 export default function ProgressRing({
@@ -17,6 +19,8 @@ export default function ProgressRing({
   progress,
   color = colors.mint,
   trackColor = "#262C33",
+  labelFontSize = 12,
+  labelSuffix = "",
 }: Props) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -43,7 +47,10 @@ export default function ProgressRing({
       </Svg>
       <View style={StyleSheet.absoluteFillObject}>
         <View style={styles.centerContent}>
-          <Text style={styles.percentText}>{Math.round(clamped * 100)}</Text>
+          <Text style={[styles.percentText, { fontSize: labelFontSize }]}>
+            {Math.round(clamped * 100)}
+            {labelSuffix}
+          </Text>
         </View>
       </View>
     </View>
