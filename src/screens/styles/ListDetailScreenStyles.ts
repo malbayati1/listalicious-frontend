@@ -25,6 +25,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
+  statsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statsButtonPressed: {
+    backgroundColor: colors.hover,
+  },
   invitePill: {
     height: 40,
     paddingHorizontal: 16,

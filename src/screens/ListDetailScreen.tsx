@@ -11,6 +11,7 @@ import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
 import Confetti from "../components/Confetti";
+import BarChartIcon from "../components/icons/BarChartIcon";
 import CheckIcon from "../components/icons/CheckIcon";
 import PlusIcon from "../components/icons/PlusIcon";
 import { colors } from "../theme/tokens";
@@ -187,6 +188,10 @@ export default function ListDetailScreen() {
     router.push({ pathname: "/(app)/list/[id]/share", params: { id, title } });
   };
 
+  const openStatsScreen = () => {
+    router.push({ pathname: "/(app)/list/[id]/stats", params: { id, title } });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar style="light" />
@@ -207,6 +212,13 @@ export default function ListDetailScreen() {
             <View style={styles.topRow}>
               <BackButton />
               <View style={styles.topRowRight}>
+                <Pressable
+                  testID="stats-button"
+                  onPress={openStatsScreen}
+                  style={({ pressed }) => [styles.statsButton, pressed && styles.statsButtonPressed]}
+                >
+                  <BarChartIcon size={18} color={colors.ink} />
+                </Pressable>
                 <Pressable
                   onPress={openShareScreen}
                   style={({ pressed }) => [styles.invitePill, pressed && styles.invitePillPressed]}

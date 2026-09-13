@@ -49,6 +49,33 @@ export const joinListByToken = async (token: string): Promise<void> => {
   await apiClient.post(`/lists/join/${token}`);
 };
 
+// ── Stats & activity ─────────────────────────────────────────────────────────
+
+export type ListStats = {
+  total: number;
+  checked: number;
+  unchecked: number;
+};
+
+export const getListStats = async (listId: string): Promise<ListStats> => {
+  const response = await apiClient.get<ListStats>(`/lists/${listId}/stats`);
+  return response.data;
+};
+
+export type ActivityEntry = {
+  list_id: string;
+  user_id: string;
+  user_email: string;
+  action: string;
+  meta: Record<string, unknown>;
+  created_at: string;
+};
+
+export const getListActivity = async (listId: string, limit = 100): Promise<ActivityEntry[]> => {
+  const response = await apiClient.get<ActivityEntry[]>(`/lists/${listId}/activity`, { params: { limit } });
+  return response.data;
+};
+
 // ── Items ──────────────────────────────────────────────────────────────────
 
 export type NewItemData = {
