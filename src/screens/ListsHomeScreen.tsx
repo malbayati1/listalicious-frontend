@@ -9,6 +9,7 @@ import { createList, getItems, getLists, getSharedUsers, SharedUser } from "../a
 import { GroceryList } from "../types/GroceryList";
 import Avatar from "../components/Avatar";
 import ProgressRing from "../components/ProgressRing";
+import ClockIcon from "../components/icons/ClockIcon";
 import PlusIcon from "../components/icons/PlusIcon";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
@@ -159,9 +160,17 @@ export default function ListsHomeScreen() {
               <Text style={styles.headerDate}>{today}</Text>
               <Text style={styles.headerTitle}>Your lists</Text>
             </View>
-            <Pressable onPress={() => setSheetMode("logout")} style={({ pressed }) => pressed && styles.headerAvatarPressed}>
-              <Avatar label={selfInitial} size={42} radius={15} fontSize={17} />
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => router.push("/activity")}
+                style={({ pressed }) => [styles.headerIconButton, pressed && styles.headerIconButtonPressed]}
+              >
+                <ClockIcon size={18} color={colors.ink} />
+              </Pressable>
+              <Pressable onPress={() => setSheetMode("logout")} style={({ pressed }) => pressed && styles.headerAvatarPressed}>
+                <Avatar label={selfInitial} size={42} radius={15} fontSize={17} />
+              </Pressable>
+            </View>
           </View>
 
           {lists && lists.length === 0 ? (
