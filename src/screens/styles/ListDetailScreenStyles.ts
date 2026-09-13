@@ -333,21 +333,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.danger,
   },
-  inviteLinkBox: {
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.lineStrong,
-    paddingHorizontal: 18,
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  inviteLinkText: {
-    fontFamily: fonts.mono400,
-    fontSize: 13,
-    color: colors.faint,
-  },
 });
 
 export default styles;

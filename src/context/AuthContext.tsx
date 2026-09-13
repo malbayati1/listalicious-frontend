@@ -2,12 +2,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { getToken, saveToken, deleteToken } from "../utils/tokenStorage";
 import { setInMemoryToken } from "../api/authClient";
-import { login as loginApi } from "../api/authApi";
+import { login as loginApi, getMe } from "../api/authApi";
+import { User } from "../types/User";
 
 type AuthContextType = {
   token: string | null;
   isBootstrapping: boolean;
-  user: string | null;
+  user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -17,18 +18,33 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isBootstrapping, setBootstrapping] = useState(true);
-  const [user, setUser] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     const bootstrapAuth = async () => {
       const stored = await getToken();
+      let me: User | null = null;
+
+      if (stored) {
+        setInMemoryToken(stored);
+        try {
+          me = await getMe();
+        } catch {
+          // stored token is no longer valid — treat as logged out
+          await deleteToken();
+          setInMemoryToken(null);
+        }
+      }
+
       if (!mounted) {
         return;
       }
-      setToken(stored);
-      setInMemoryToken(stored);
+      if (stored && me) {
+        setToken(stored);
+        setUser(me);
+      }
       setBootstrapping(false);
     };
 
@@ -48,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await saveToken(res.access_token);
     setToken(res.access_token);
     setInMemoryToken(res.access_token);
-    setUser(email);
+    setUser(res.user);
   };
 
   const logout = async () => {

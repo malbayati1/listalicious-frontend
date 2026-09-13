@@ -14,7 +14,31 @@ export const createList = async (title: string): Promise<GroceryList> => {
   return response.data;
 };
 
-// ── Invites ────────────────────────────────────────────────────────────────
+export const getList = async (listId: string): Promise<GroceryList> => {
+  const response = await apiClient.get<GroceryList>(`/lists/${listId}`);
+  return response.data;
+};
+
+// ── Sharing & invites ────────────────────────────────────────────────────────
+
+export type SharedUser = {
+  id: string;
+  email: string;
+  username: string | null;
+};
+
+export const getSharedUsers = async (listId: string): Promise<SharedUser[]> => {
+  const response = await apiClient.get<SharedUser[]>(`/lists/${listId}/shared-users`);
+  return response.data;
+};
+
+export const shareListWithEmail = async (listId: string, email: string): Promise<void> => {
+  await apiClient.post(`/lists/${listId}/share`, { email });
+};
+
+export const unshareListWithEmail = async (listId: string, email: string): Promise<void> => {
+  await apiClient.post(`/lists/${listId}/unshare`, { email });
+};
 
 export const createInviteLink = async (listId: string): Promise<{ invite_token: string; expires_at: string }> => {
   const response = await apiClient.post<{ invite_token: string; expires_at: string }>(`/lists/${listId}/invite`);
