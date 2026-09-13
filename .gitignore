@@ -36,4 +36,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+
+design_handoff_listalicious_2
+
 app-example
+
+REDESIGN_PROGRESS.md

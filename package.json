@@ -15,6 +15,8 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
+    "@expo-google-fonts/outfit": "^0.4.3",
     "@expo/vector-icons": "^14.1.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
@@ -23,6 +25,7 @@
     "axios": "^1.11.0",
     "expo": "53.0.9",
     "expo-blur": "14.1.4",
+    "expo-clipboard": "~7.1.5",
     "expo-font": "13.3.1",
     "expo-haptics": "14.1.4",
     "expo-image": "2.1.7",
@@ -42,12 +45,12 @@
     "react-native-reanimated": "3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "4.10.0",
+    "react-native-svg": "15.11.2",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "0.20.0",
     "react-native-webview": "13.13.5"
   },
   "devDependencies": {
-    "typescript-eslint": "^8.44.0",
     "@eslint/js": "^9.35.0",
     "@types/react": "19.0.10",
     "eslint": "^9.25.0",
@@ -56,7 +59,8 @@
     "eslint-plugin-prettier": "^5.5.1",
     "eslint-plugin-react": "^7.37.5",
     "prettier": "^3.6.2",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "typescript-eslint": "^8.44.0"
   },
   "private": true
 }
