@@ -37,6 +37,22 @@ const styles = StyleSheet.create({
   headerAvatarPressed: {
     opacity: 0.8,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerIconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 15,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerIconButtonPressed: {
+    backgroundColor: colors.hover,
+  },
 
   cardList: {
     gap: 14,
