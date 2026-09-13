@@ -5,7 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
-import { createList, getItems, getLists } from "../api/listApi";
+import { createList, getItems, getLists, getSharedUsers, SharedUser } from "../api/listApi";
 import { GroceryList } from "../types/GroceryList";
 import Avatar from "../components/Avatar";
 import ProgressRing from "../components/ProgressRing";
@@ -20,7 +20,7 @@ type ListSummary = {
   title: string;
   total: number;
   done: number;
-  collaborators: string[];
+  collaborators: SharedUser[];
 };
 
 const COLLABORATOR_PALETTE = [colors.apricot, colors.periwinkle];
@@ -33,19 +33,26 @@ function collaboratorColor(id: string) {
   return COLLABORATOR_PALETTE[hash];
 }
 
-async function summarizeLists(lists: GroceryList[], selfEmail: string | null): Promise<ListSummary[]> {
-  const results = await Promise.allSettled(lists.map((list) => getItems(list._id)));
+function collaboratorLabel(person: SharedUser) {
+  return person.username || person.email;
+}
+
+async function summarizeLists(lists: GroceryList[], selfId: string | undefined): Promise<ListSummary[]> {
+  const [itemResults, sharedResults] = await Promise.all([
+    Promise.allSettled(lists.map((list) => getItems(list._id))),
+    Promise.allSettled(lists.map((list) => getSharedUsers(list._id))),
+  ]);
   return lists.map((list, index) => {
-    const result = results[index];
-    const items = result.status === "fulfilled" ? result.value : [];
+    const itemResult = itemResults[index];
+    const items = itemResult.status === "fulfilled" ? itemResult.value : [];
+    const sharedResult = sharedResults[index];
+    const sharedUsers = sharedResult.status === "fulfilled" ? sharedResult.value : [];
     return {
       id: list._id,
       title: list.title,
       total: items.length,
       done: items.filter((item) => item.is_checked).length,
-      collaborators: list.shared_with.filter(
-        (person) => person.toLowerCase() !== (selfEmail ?? "").toLowerCase()
-      ),
+      collaborators: sharedUsers.filter((person) => person.id !== selfId),
     };
   });
 }
@@ -65,7 +72,7 @@ export default function ListsHomeScreen() {
     setLoadError(undefined);
     try {
       const rawLists = await getLists();
-      const summaries = await summarizeLists(rawLists, user);
+      const summaries = await summarizeLists(rawLists, user?._id);
       setLists(summaries);
     } catch (error) {
       console.error("Failed to load lists:", error);
@@ -125,7 +132,7 @@ export default function ListsHomeScreen() {
     submit();
   };
 
-  const selfInitial = user ?? "?";
+  const selfInitial = user?.username || user?.email || "?";
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
   return (
@@ -193,13 +200,13 @@ export default function ListsHomeScreen() {
                     <View style={styles.cardFooterRow}>
                       <Avatar label={selfInitial} size={28} radius={10} fontSize={13} ringColor={colors.surface} />
                       {shownCollaborators.map((person) => (
-                        <View key={person} style={styles.avatarOverlap}>
+                        <View key={person.id} style={styles.avatarOverlap}>
                           <Avatar
-                            label={person}
+                            label={collaboratorLabel(person)}
                             size={28}
                             radius={10}
                             fontSize={13}
-                            backgroundColor={collaboratorColor(person)}
+                            backgroundColor={collaboratorColor(person.id)}
                             textColor={colors.mintInk}
                             ringColor={colors.surface}
                           />

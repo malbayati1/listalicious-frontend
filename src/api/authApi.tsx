@@ -41,3 +41,8 @@ export const login = async (credentials: LoginData): Promise<AuthResponse> => {
   }
   return response.data;
 };
+
+export const getMe = async (): Promise<User> => {
+  const response = await apiClient.get<User>("/auth/me");
+  return response.data;
+};

@@ -3,17 +3,8 @@ import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-nativ
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams } from "expo-router";
-import * as Clipboard from "expo-clipboard";
-import {
-  addItem,
-  checkItem,
-  clearCheckedItems,
-  createInviteLink,
-  deleteItem,
-  getItems,
-  updateItem,
-} from "../api/listApi";
+import { router, useLocalSearchParams } from "expo-router";
+import { addItem, checkItem, clearCheckedItems, deleteItem, getItems, updateItem } from "../api/listApi";
 import { Item } from "../types/Item";
 import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
@@ -45,12 +36,6 @@ export default function ListDetailScreen() {
   const [draftNote, setDraftNote] = useState("");
   const [draftError, setDraftError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
-
-  const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
-  const [inviteToken, setInviteToken] = useState<string | undefined>();
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [inviteError, setInviteError] = useState<string | undefined>();
-  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) {
@@ -182,33 +167,8 @@ export default function ListDetailScreen() {
     submit();
   };
 
-  const openInviteSheet = () => {
-    setInviteError(undefined);
-    setCopied(false);
-    setInviteSheetOpen(true);
-    if (!id) {
-      return;
-    }
-    setInviteLoading(true);
-    createInviteLink(id)
-      .then((res) => setInviteToken(res.invite_token))
-      .catch((error) => {
-        console.error("Failed to create invite link:", error);
-        setInviteError("Couldn't create an invite link right now.");
-      })
-      .finally(() => setInviteLoading(false));
-  };
-
-  const inviteLink = inviteToken ? `listalicious://join/${inviteToken}` : "";
-
-  const handleCopyInvite = () => {
-    if (!inviteLink) {
-      return;
-    }
-    Clipboard.setStringAsync(inviteLink).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2400);
-    });
+  const openShareScreen = () => {
+    router.push({ pathname: "/(app)/list/[id]/share", params: { id, title } });
   };
 
   return (
@@ -232,7 +192,7 @@ export default function ListDetailScreen() {
               <BackButton />
               <View style={styles.topRowRight}>
                 <Pressable
-                  onPress={openInviteSheet}
+                  onPress={openShareScreen}
                   style={({ pressed }) => [styles.invitePill, pressed && styles.invitePillPressed]}
                 >
                   <PlusIcon size={16} color={colors.mint} />
@@ -369,26 +329,6 @@ export default function ListDetailScreen() {
             <Text style={styles.removeButtonLabel}>Remove from list</Text>
           </Pressable>
         ) : null}
-      </BottomSheet>
-
-      <BottomSheet visible={inviteSheetOpen} onClose={() => setInviteSheetOpen(false)}>
-        <Text style={styles.sheetTitle}>Invite to this list</Text>
-        {inviteLoading ? (
-          <View style={{ paddingVertical: 24, alignItems: "center" }}>
-            <ActivityIndicator color={colors.mint} />
-          </View>
-        ) : inviteError ? (
-          <Text style={styles.nameError}>{inviteError}</Text>
-        ) : (
-          <>
-            <View style={styles.inviteLinkBox}>
-              <Text style={styles.inviteLinkText} numberOfLines={1}>
-                {inviteLink}
-              </Text>
-            </View>
-            <PrimaryButton label={copied ? "Copied" : "Copy link"} onPress={handleCopyInvite} />
-          </>
-        )}
       </BottomSheet>
     </SafeAreaView>
   );
