@@ -5,7 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
-import { createList, getItems, getLists, getSharedUsers, SharedUser } from "../api/listApi";
+import { createList, getItems, getLists, getSharedUsers, SharedUser, unarchiveList } from "../api/listApi";
 import { GroceryList } from "../types/GroceryList";
 import Avatar from "../components/Avatar";
 import ProgressRing from "../components/ProgressRing";
@@ -63,10 +63,13 @@ export default function ListsHomeScreen() {
   const [lists, setLists] = useState<ListSummary[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | undefined>();
-  const [sheetMode, setSheetMode] = useState<"none" | "newList">("none");
+  const [sheetMode, setSheetMode] = useState<"none" | "newList" | "archived">("none");
   const [newListName, setNewListName] = useState("");
   const [newListError, setNewListError] = useState<string | undefined>();
   const [creating, setCreating] = useState(false);
+
+  const [archivedLists, setArchivedLists] = useState<GroceryList[] | null>(null);
+  const [unarchivingId, setUnarchivingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoadError(undefined);
@@ -122,6 +125,42 @@ export default function ListsHomeScreen() {
       }
     };
     submit();
+  };
+
+  const openArchivedSheet = () => {
+    setSheetMode("archived");
+    setArchivedLists(null);
+    const load = async () => {
+      try {
+        const all = await getLists({ includeArchived: true });
+        setArchivedLists(all.filter((list) => list.archived));
+      } catch (error) {
+        console.error("Failed to load archived lists:", error);
+        setArchivedLists([]);
+      }
+    };
+    load();
+  };
+
+  const handleUnarchive = (list: GroceryList) => {
+    const submit = async () => {
+      setUnarchivingId(list._id);
+      try {
+        await unarchiveList(list._id);
+        setArchivedLists((current) => (current ? current.filter((l) => l._id !== list._id) : current));
+        load();
+      } catch (error) {
+        console.error("Failed to unarchive list:", error);
+      } finally {
+        setUnarchivingId(null);
+      }
+    };
+    submit();
+  };
+
+  const openArchivedList = (list: GroceryList) => {
+    setSheetMode("none");
+    router.push({ pathname: "/(app)/list/[id]", params: { id: list._id, title: list.title } });
   };
 
   const selfInitial = user?.username || user?.email || "?";
@@ -235,6 +274,10 @@ export default function ListsHomeScreen() {
               </Pressable>
             </View>
           )}
+
+          <Pressable style={styles.footerLinkRow} onPress={openArchivedSheet}>
+            <Text style={styles.footerLinkLabel}>Archived lists</Text>
+          </Pressable>
         </ScrollView>
       )}
 
@@ -252,6 +295,36 @@ export default function ListsHomeScreen() {
         />
         {newListError ? <Text style={styles.sheetError}>{newListError}</Text> : null}
         <PrimaryButton label="Create list" onPress={handleCreateList} loading={creating} />
+      </BottomSheet>
+
+      <BottomSheet visible={sheetMode === "archived"} onClose={() => setSheetMode("none")}>
+        <Text style={styles.sheetTitle}>Archived lists</Text>
+        {archivedLists === null ? (
+          <View style={{ paddingVertical: 20, alignItems: "center" }}>
+            <ActivityIndicator size="small" color={colors.mint} />
+          </View>
+        ) : archivedLists.length === 0 ? (
+          <Text style={styles.archivedEmptyText}>Nothing archived. Archive a list from its "···" menu.</Text>
+        ) : (
+          archivedLists.map((list) => (
+            <Pressable key={list._id} style={styles.archivedRow} onPress={() => openArchivedList(list)}>
+              <Text style={styles.archivedRowTitle} numberOfLines={1}>
+                {list.title}
+              </Text>
+              <Pressable
+                style={styles.unarchivePill}
+                onPress={() => handleUnarchive(list)}
+                disabled={unarchivingId === list._id}
+              >
+                {unarchivingId === list._id ? (
+                  <ActivityIndicator size="small" color={colors.mint} />
+                ) : (
+                  <Text style={styles.unarchivePillLabel}>Unarchive</Text>
+                )}
+              </Pressable>
+            </Pressable>
+          ))
+        )}
       </BottomSheet>
     </SafeAreaView>
   );
