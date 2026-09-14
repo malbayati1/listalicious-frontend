@@ -298,6 +298,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.danger,
   },
+
+  deleteAccountButton: {
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+  },
+  deleteAccountLabel: {
+    fontFamily: fonts.outfit400,
+    fontSize: 13,
+    color: colors.faint,
+  },
 });
 
 export default styles;

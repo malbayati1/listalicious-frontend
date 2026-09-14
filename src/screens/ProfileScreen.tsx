@@ -7,6 +7,7 @@ import {
   changeEmail,
   changePassword,
   confirmEmailChange,
+  deleteAccount,
   getSessions,
   logoutAllDevices,
   revokeSession,
@@ -30,7 +31,8 @@ type SheetMode =
   | "changePassword"
   | "sessions"
   | "signOutEverywhere"
-  | "logout";
+  | "logout"
+  | "deleteAccount";
 
 function formatSessionDate(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -76,6 +78,9 @@ export default function ProfileScreen() {
   const [sessions, setSessions] = useState<Session[] | null>(null);
   const [currentJti, setCurrentJti] = useState<string | null>(null);
   const [revokingJti, setRevokingJti] = useState<string | null>(null);
+
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [currentPasswordForChange, setCurrentPasswordForChange] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -280,6 +285,26 @@ export default function ProfileScreen() {
     submit();
   };
 
+  const openDeleteAccount = () => {
+    setDeleteConfirmText("");
+    setSheetMode("deleteAccount");
+  };
+
+  const handleDeleteAccount = () => {
+    const submit = async () => {
+      setDeletingAccount(true);
+      try {
+        await deleteAccount();
+        await logout();
+        router.replace("/(auth)");
+      } catch (error) {
+        console.error("Failed to delete account:", error);
+        setDeletingAccount(false);
+      }
+    };
+    submit();
+  };
+
   const displayName = user?.username || user?.email || "?";
   const isVerified = Boolean(user?.email_verified);
 
@@ -388,6 +413,10 @@ export default function ProfileScreen() {
           style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
         >
           <Text style={styles.logoutLabel}>Log out</Text>
+        </Pressable>
+
+        <Pressable style={styles.deleteAccountButton} onPress={openDeleteAccount}>
+          <Text style={styles.deleteAccountLabel}>Delete account</Text>
         </Pressable>
 
         <Text style={styles.footer}>Listalicious 2.0 · build 412</Text>
@@ -567,6 +596,45 @@ export default function ProfileScreen() {
         <Text style={styles.sheetBody}>You'll need your email and password to sign back in.</Text>
         <Pressable style={styles.sheetDangerButton} onPress={handleLogout}>
           <Text style={styles.sheetDangerLabel}>Log out</Text>
+        </Pressable>
+        <Pressable style={styles.sheetCancel} onPress={closeSheet}>
+          <Text style={styles.sheetCancelLabel}>Cancel</Text>
+        </Pressable>
+      </BottomSheet>
+
+      <BottomSheet visible={sheetMode === "deleteAccount"} onClose={closeSheet}>
+        <Text style={styles.sheetTitle}>Delete your account?</Text>
+        <Text style={styles.sheetBody}>
+          This permanently deletes your account, every list you own and its items, and removes you from every list
+          shared with you. This can't be undone.
+        </Text>
+        <Text style={styles.fieldLabel}>Type DELETE to confirm</Text>
+        <TextInput
+          value={deleteConfirmText}
+          onChangeText={setDeleteConfirmText}
+          placeholder="DELETE"
+          placeholderTextColor={colors.faint}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          style={styles.input}
+        />
+        <Pressable
+          style={styles.sheetDangerButton}
+          onPress={handleDeleteAccount}
+          disabled={deleteConfirmText !== "DELETE" || deletingAccount}
+        >
+          {deletingAccount ? (
+            <ActivityIndicator size="small" color={colors.danger} />
+          ) : (
+            <Text
+              style={[
+                styles.sheetDangerLabel,
+                deleteConfirmText !== "DELETE" && { color: colors.disabledStrong },
+              ]}
+            >
+              Delete my account
+            </Text>
+          )}
         </Pressable>
         <Pressable style={styles.sheetCancel} onPress={closeSheet}>
           <Text style={styles.sheetCancelLabel}>Cancel</Text>

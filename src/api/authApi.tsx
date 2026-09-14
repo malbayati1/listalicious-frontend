@@ -88,6 +88,10 @@ export const logoutAllDevices = async (): Promise<void> => {
   await apiClient.post("/auth/logout-all");
 };
 
+export const deleteAccount = async (): Promise<void> => {
+  await apiClient.delete("/auth/delete-account");
+};
+
 export type Session = {
   jti: string;
   created_at: string;
