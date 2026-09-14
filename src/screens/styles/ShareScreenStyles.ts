@@ -170,6 +170,41 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
+  searchStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 2,
+  },
+  searchStatusLabel: {
+    fontFamily: fonts.outfit400,
+    fontSize: 13,
+    color: colors.muted,
+  },
+  searchResultsList: {
+    marginTop: 4,
+    gap: 6,
+  },
+  searchResultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  searchResultRowPressed: {
+    backgroundColor: colors.hover,
+  },
+  searchResultAdd: {
+    fontFamily: fonts.outfit500,
+    fontSize: 13,
+    color: colors.mint,
+  },
+
   errorTitle: {
     fontFamily: fonts.outfit600,
     fontSize: 21,

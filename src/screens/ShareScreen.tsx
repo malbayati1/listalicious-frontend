@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -15,6 +15,7 @@ import {
   SharedUser,
   unshareListWithEmail,
 } from "../api/listApi";
+import { searchUsers, UserSearchResult } from "../api/usersApi";
 import { GroceryList } from "../types/GroceryList";
 import Avatar from "../components/Avatar";
 import BackButton from "../components/BackButton";
@@ -23,6 +24,9 @@ import BottomSheet from "../components/BottomSheet";
 import ArrowRightIcon from "../components/icons/ArrowRightIcon";
 import { colors } from "../theme/tokens";
 import styles from "./styles/ShareScreenStyles";
+
+const SEARCH_DEBOUNCE_MS = 350;
+const SEARCH_MIN_LENGTH = 2;
 
 const COLLABORATOR_PALETTE = [colors.apricot, colors.periwinkle, colors.mint];
 
@@ -62,6 +66,12 @@ export default function ShareScreen() {
   const [addEmail, setAddEmail] = useState("");
   const [addEmailError, setAddEmailError] = useState<string | undefined>();
   const [addingEmail, setAddingEmail] = useState(false);
+
+  const [searchResults, setSearchResults] = useState<UserSearchResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [addingResultId, setAddingResultId] = useState<string | null>(null);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRequestId = useRef(0);
 
   const [removeTarget, setRemoveTarget] = useState<SharedUser | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -117,6 +127,70 @@ export default function ShareScreen() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2400);
     });
+  };
+
+  useEffect(() => {
+    const trimmed = addEmail.trim();
+    if (searchDebounce.current) {
+      clearTimeout(searchDebounce.current);
+    }
+    if (trimmed.length < SEARCH_MIN_LENGTH) {
+      setSearchResults(null);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    searchDebounce.current = setTimeout(() => {
+      const requestId = ++searchRequestId.current;
+      searchUsers(trimmed)
+        .then((results) => {
+          if (requestId !== searchRequestId.current) {
+            return;
+          }
+          const existingIds = new Set((collaborators ?? []).map((person) => person.id));
+          setSearchResults(results.filter((result) => !existingIds.has(result.id)));
+        })
+        .catch((error) => {
+          console.error("Failed to search users:", error);
+          if (requestId === searchRequestId.current) {
+            setSearchResults([]);
+          }
+        })
+        .finally(() => {
+          if (requestId === searchRequestId.current) {
+            setSearching(false);
+          }
+        });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      if (searchDebounce.current) {
+        clearTimeout(searchDebounce.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addEmail, collaborators]);
+
+  const handleSelectSearchResult = (result: UserSearchResult) => {
+    if (!id) {
+      return;
+    }
+    const submit = async () => {
+      setAddingResultId(result.id);
+      try {
+        await shareListWithEmail(id, result.email);
+        setAddEmail("");
+        setSearchResults(null);
+        showToast(`Added ${result.username || result.email}`, user?.username || user?.email || "?");
+        await load();
+      } catch (error) {
+        console.error("Failed to add collaborator:", error);
+        setAddEmailError("Couldn't add that person. Try again.");
+      } finally {
+        setAddingResultId(null);
+      }
+    };
+    submit();
   };
 
   const handleAddByEmail = () => {
@@ -267,13 +341,13 @@ export default function ShareScreen() {
 
             {isOwner ? (
               <>
-                <Text style={styles.sectionLabel}>ADD BY EMAIL</Text>
+                <Text style={styles.sectionLabel}>ADD PEOPLE</Text>
                 {addEmailError ? <Text style={styles.addByEmailError}>{addEmailError}</Text> : null}
                 <View style={styles.addByEmailRow}>
                   <TextInput
                     value={addEmail}
                     onChangeText={setAddEmail}
-                    placeholder="name@email.com"
+                    placeholder="Search by name or email"
                     placeholderTextColor={colors.faint}
                     autoCapitalize="none"
                     keyboardType="email-address"
@@ -289,6 +363,48 @@ export default function ShareScreen() {
                     {addingEmail ? <ActivityIndicator size="small" color={colors.mint} /> : <ArrowRightIcon />}
                   </Pressable>
                 </View>
+
+                {searching ? (
+                  <View style={styles.searchStatusRow}>
+                    <ActivityIndicator size="small" color={colors.muted} />
+                    <Text style={styles.searchStatusLabel}>Searching…</Text>
+                  </View>
+                ) : searchResults !== null ? (
+                  searchResults.length === 0 ? (
+                    <Text style={styles.searchStatusLabel}>
+                      No one found — try the exact email, or the button above sends an invite by email.
+                    </Text>
+                  ) : (
+                    <View style={styles.searchResultsList}>
+                      {searchResults.map((result) => (
+                        <Pressable
+                          key={result.id}
+                          style={({ pressed }) => [styles.searchResultRow, pressed && styles.searchResultRowPressed]}
+                          onPress={() => handleSelectSearchResult(result)}
+                          disabled={addingResultId !== null}
+                        >
+                          <Avatar
+                            label={result.username || result.email}
+                            size={36}
+                            radius={12}
+                            fontSize={14}
+                            backgroundColor={personColor(result.id)}
+                            textColor={colors.mintInk}
+                          />
+                          <View style={styles.collaboratorInfo}>
+                            <Text style={styles.collaboratorName}>{result.username || result.email}</Text>
+                            <Text style={styles.collaboratorMeta}>{result.email}</Text>
+                          </View>
+                          {addingResultId === result.id ? (
+                            <ActivityIndicator size="small" color={colors.mint} />
+                          ) : (
+                            <Text style={styles.searchResultAdd}>Add</Text>
+                          )}
+                        </Pressable>
+                      ))}
+                    </View>
+                  )
+                ) : null}
               </>
             ) : null}
           </ScrollView>
