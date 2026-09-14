@@ -77,6 +77,18 @@ export const joinListByToken = async (token: string): Promise<void> => {
   await apiClient.post(`/lists/join/${token}`);
 };
 
+export type InvitePreview = {
+  list_title: string | null;
+  invited_by_email: string | null;
+  invited_by_username: string | null;
+  expires_at: string;
+};
+
+export const previewInvite = async (token: string): Promise<InvitePreview> => {
+  const response = await apiClient.get<InvitePreview>(`/lists/join/${token}`);
+  return response.data;
+};
+
 // ── Stats & activity ─────────────────────────────────────────────────────────
 
 export type ListStats = {

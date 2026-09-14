@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { getLists, joinListByToken } from "../api/listApi";
+import { getLists, InvitePreview, joinListByToken, previewInvite } from "../api/listApi";
 import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
 import PlusIcon from "../components/icons/PlusIcon";
@@ -19,6 +19,11 @@ function truncateToken(token: string): string {
   return `${token.slice(0, 8)}…${token.slice(-4)}`;
 }
 
+function daysUntil(iso: string): number {
+  const diffMs = new Date(iso).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
 export default function JoinScreen() {
   const insets = useSafeAreaInsets();
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -26,6 +31,23 @@ export default function JoinScreen() {
   const { showToast } = useToast();
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [preview, setPreview] = useState<InvitePreview | null>(null);
+
+  useEffect(() => {
+    // Preview requires being logged in (same as the join call itself), so a
+    // logged-out visitor still sees the generic copy until they register/log
+    // in and land back here via `next`.
+    if (!authToken || !token) {
+      return;
+    }
+    previewInvite(token)
+      .then(setPreview)
+      .catch((err) => {
+        console.error("Failed to preview invite:", err);
+        setError("This invite link is invalid or has expired.");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken, token]);
 
   const goAway = () => {
     router.replace(authToken ? "/(app)/(tabs)" : "/(auth)");
@@ -84,7 +106,11 @@ export default function JoinScreen() {
           <View style={styles.badge}>
             <PlusIcon size={22} color={colors.mint} />
           </View>
-          <Text style={styles.headline}>You're invited to join a list</Text>
+          <Text style={styles.headline}>
+            {preview
+              ? `${preview.invited_by_username || preview.invited_by_email || "Someone"} invited you to ${preview.list_title || "a list"}`
+              : "You're invited to join a list"}
+          </Text>
           <Text style={styles.headlineBody}>
             You'll be able to add items, tick things off and see everyone's changes live.
           </Text>
@@ -92,6 +118,11 @@ export default function JoinScreen() {
           <View style={[styles.tokenCard, error && styles.tokenCardError]}>
             {error ? (
               <Text style={styles.tokenError}>{error}</Text>
+            ) : preview ? (
+              <>
+                <Text style={styles.tokenLabel}>EXPIRES</Text>
+                <Text style={styles.tokenValue}>in {daysUntil(preview.expires_at)}d</Text>
+              </>
             ) : (
               <>
                 <Text style={styles.tokenLabel}>INVITE CODE</Text>
