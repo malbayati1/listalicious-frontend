@@ -130,19 +130,14 @@ export type NewItemData = {
   aisle?: string | null;
 };
 
-// The backend serializes Item's id field inconsistently across routes: GET
-// list_items manually calls .model_dump() (no alias) and gives "id", while
-// create/update/check return the Pydantic model directly, which FastAPI
-// serializes with response_model_by_alias's default of true and gives "_id".
-// Normalize every item response here so the rest of the app only ever sees `id`.
-type RawItem = Omit<Item, "id"> & { id?: string; _id?: string };
+// Every item-returning route consistently serializes the id as "_id" now
+// (backend fix, 2026-09-14) — this just renames it to the "id" field the rest
+// of the app uses, same as GroceryList already does.
+type RawItem = Omit<Item, "id"> & { _id: string };
 
 function normalizeItem(raw: RawItem): Item {
-  const id = raw.id ?? raw._id;
-  if (!id) {
-    throw new Error("Item response is missing an id");
-  }
-  return { ...raw, id };
+  const { _id, ...rest } = raw;
+  return { ...rest, id: _id };
 }
 
 export const getItems = async (listId: string): Promise<Item[]> => {

@@ -161,7 +161,14 @@ export default function ListDetailScreen() {
     if (allDone && !wasAllDone.current) {
       setCelebrationTrigger((n) => n + 1);
       chimePlayer.seekTo(0);
-      chimePlayer.play();
+      try {
+        // On web, browsers can reject audio playback if it's not tied closely
+        // enough to a user gesture (autoplay policy) — the confetti's still
+        // worth showing either way, so don't let a blocked chime throw.
+        Promise.resolve(chimePlayer.play()).catch(() => {});
+      } catch {
+        // no-op
+      }
     }
     wasAllDone.current = allDone;
     // eslint-disable-next-line react-hooks/exhaustive-deps
