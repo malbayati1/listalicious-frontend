@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { changeEmail, changePassword, confirmEmailChange, logoutAllDevices } from "../api/authApi";
+import { changeEmail, changePassword, confirmEmailChange, logoutAllDevices, updateUsername } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
@@ -11,7 +11,7 @@ import ChevronRightIcon from "../components/icons/ChevronRightIcon";
 import { colors } from "../theme/tokens";
 import styles from "./styles/ProfileScreenStyles";
 
-type SheetMode = "none" | "changeEmail" | "confirmEmailChange" | "changePassword" | "signOutEverywhere" | "logout";
+type SheetMode = "none" | "editName" | "changeEmail" | "confirmEmailChange" | "changePassword" | "signOutEverywhere" | "logout";
 
 function parseAuthError(error: unknown, fallback: string): string {
   const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
@@ -23,10 +23,14 @@ function parseAuthError(error: unknown, fallback: string): string {
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
 
   const [liveUpdates, setLiveUpdates] = useState(true);
   const [sheetMode, setSheetMode] = useState<SheetMode>("none");
+
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameError, setNameError] = useState<string | undefined>();
+  const [savingName, setSavingName] = useState(false);
 
   const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -49,6 +53,35 @@ export default function ProfileScreen() {
   const [passwordChanged, setPasswordChanged] = useState(false);
 
   const closeSheet = () => setSheetMode("none");
+
+  const openEditName = () => {
+    setNameDraft(user?.username || "");
+    setNameError(undefined);
+    setSheetMode("editName");
+  };
+
+  const handleSaveName = () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      setNameError("Give yourself a name");
+      return;
+    }
+    setNameError(undefined);
+    const submit = async () => {
+      setSavingName(true);
+      try {
+        await updateUsername(trimmed);
+        await refreshUser();
+        closeSheet();
+      } catch (error) {
+        console.error("Failed to update name:", error);
+        setNameError(parseAuthError(error, "Couldn't save that name. Try again."));
+      } finally {
+        setSavingName(false);
+      }
+    };
+    submit();
+  };
 
   const openChangeEmail = () => {
     setNewEmail("");
@@ -208,6 +241,17 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.settingsList}>
+          <Pressable
+            onPress={openEditName}
+            style={({ pressed }) => [styles.settingRow, pressed && styles.settingRowPressed]}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Your name</Text>
+              <Text style={styles.settingMeta}>{user?.username || "Not set"}</Text>
+            </View>
+            <ChevronRightIcon />
+          </Pressable>
+
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Live updates</Text>
@@ -265,6 +309,23 @@ export default function ProfileScreen() {
 
         <Text style={styles.footer}>Listalicious 2.0 · build 412</Text>
       </ScrollView>
+
+      <BottomSheet visible={sheetMode === "editName"} onClose={closeSheet}>
+        <Text style={styles.sheetTitle}>Your name</Text>
+        <Text style={styles.fieldLabel}>Name</Text>
+        <TextInput
+          autoFocus
+          value={nameDraft}
+          onChangeText={setNameDraft}
+          placeholder="What should we call you?"
+          placeholderTextColor={colors.faint}
+          style={styles.input}
+          onSubmitEditing={handleSaveName}
+          returnKeyType="done"
+        />
+        {nameError ? <Text style={styles.error}>{nameError}</Text> : null}
+        <PrimaryButton label="Save name" onPress={handleSaveName} loading={savingName} />
+      </BottomSheet>
 
       <BottomSheet visible={sheetMode === "changeEmail"} onClose={closeSheet}>
         <Text style={styles.sheetTitle}>Change email</Text>

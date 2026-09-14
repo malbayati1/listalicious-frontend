@@ -48,6 +48,11 @@ export const getMe = async (): Promise<User> => {
   return response.data;
 };
 
+export const updateUsername = async (username: string): Promise<User> => {
+  const response = await apiClient.patch<User>("/auth/me", { username });
+  return response.data;
+};
+
 export const requestEmailVerification = async (): Promise<void> => {
   await apiClient.post("/auth/request-email-verification");
 };
