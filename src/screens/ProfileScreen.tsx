@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { changeEmail, confirmEmailChange, logoutAllDevices } from "../api/authApi";
+import { changeEmail, changePassword, confirmEmailChange, logoutAllDevices } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
@@ -11,7 +11,15 @@ import ChevronRightIcon from "../components/icons/ChevronRightIcon";
 import { colors } from "../theme/tokens";
 import styles from "./styles/ProfileScreenStyles";
 
-type SheetMode = "none" | "changeEmail" | "confirmEmailChange" | "signOutEverywhere" | "logout";
+type SheetMode = "none" | "changeEmail" | "confirmEmailChange" | "changePassword" | "signOutEverywhere" | "logout";
+
+function parseAuthError(error: unknown, fallback: string): string {
+  const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
+  if (typeof detail === "string") {
+    return detail;
+  }
+  return fallback;
+}
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -32,6 +40,13 @@ export default function ProfileScreen() {
   const [pendingEmail, setPendingEmail] = useState("");
 
   const [signingOutEverywhere, setSigningOutEverywhere] = useState(false);
+
+  const [currentPasswordForChange, setCurrentPasswordForChange] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [changePasswordError, setChangePasswordError] = useState<string | undefined>();
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   const closeSheet = () => setSheetMode("none");
 
@@ -92,6 +107,46 @@ export default function ProfileScreen() {
         setConfirmError("That code didn't work. Check you copied the whole thing.");
       } finally {
         setConfirming(false);
+      }
+    };
+    submit();
+  };
+
+  const openChangePassword = () => {
+    setCurrentPasswordForChange("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setChangePasswordError(undefined);
+    setPasswordChanged(false);
+    setSheetMode("changePassword");
+  };
+
+  const handleSubmitChangePassword = () => {
+    if (!currentPasswordForChange || !newPassword) {
+      setChangePasswordError("Fill in both password fields");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setChangePasswordError("New passwords don't match");
+      return;
+    }
+    setChangePasswordError(undefined);
+    const submit = async () => {
+      setChangingPassword(true);
+      try {
+        await changePassword(currentPasswordForChange, newPassword);
+        // Same as email change: the backend bumps token_version on a
+        // successful password change, revoking this session on purpose —
+        // show success, then log out and send them back to log in fresh.
+        setPasswordChanged(true);
+        setTimeout(() => {
+          logout().then(() => router.replace("/(auth)"));
+        }, 1800);
+      } catch (error) {
+        console.error("Failed to change password:", error);
+        setChangePasswordError(parseAuthError(error, "Couldn't change your password. Try again."));
+      } finally {
+        setChangingPassword(false);
       }
     };
     submit();
@@ -179,6 +234,17 @@ export default function ProfileScreen() {
           </Pressable>
 
           <Pressable
+            onPress={openChangePassword}
+            style={({ pressed }) => [styles.settingRow, pressed && styles.settingRowPressed]}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Change password</Text>
+              <Text style={styles.settingMeta}>Signs you out everywhere else</Text>
+            </View>
+            <ChevronRightIcon />
+          </Pressable>
+
+          <Pressable
             onPress={() => setSheetMode("signOutEverywhere")}
             style={({ pressed }) => [styles.settingRow, pressed && styles.settingRowPressed]}
           >
@@ -255,6 +321,47 @@ export default function ProfileScreen() {
             />
             {confirmError ? <Text style={styles.error}>{confirmError}</Text> : null}
             <PrimaryButton label="Confirm" onPress={handleConfirmEmailChange} loading={confirming} />
+          </>
+        )}
+      </BottomSheet>
+
+      <BottomSheet visible={sheetMode === "changePassword"} onClose={closeSheet}>
+        <Text style={styles.sheetTitle}>Change password</Text>
+        {passwordChanged ? (
+          <Text style={styles.success}>Password changed. Log in again with your new password to continue.</Text>
+        ) : (
+          <>
+            <Text style={styles.sheetBody}>Changing your password signs you out on every other device.</Text>
+            <Text style={styles.fieldLabel}>Current password</Text>
+            <TextInput
+              value={currentPasswordForChange}
+              onChangeText={setCurrentPasswordForChange}
+              placeholder="Enter your current password"
+              placeholderTextColor={colors.faint}
+              secureTextEntry
+              style={styles.input}
+            />
+            <Text style={styles.fieldLabel}>New password</Text>
+            <TextInput
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="8+ characters, at least one number"
+              placeholderTextColor={colors.faint}
+              secureTextEntry
+              style={styles.input}
+            />
+            <Text style={styles.fieldLabel}>Confirm new password</Text>
+            <TextInput
+              value={confirmNewPassword}
+              onChangeText={setConfirmNewPassword}
+              placeholder="Type it again"
+              placeholderTextColor={colors.faint}
+              secureTextEntry
+              style={styles.input}
+              onSubmitEditing={handleSubmitChangePassword}
+            />
+            {changePasswordError ? <Text style={styles.error}>{changePasswordError}</Text> : null}
+            <PrimaryButton label="Change password" onPress={handleSubmitChangePassword} loading={changingPassword} />
           </>
         )}
       </BottomSheet>
