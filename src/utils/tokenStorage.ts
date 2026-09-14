@@ -2,7 +2,9 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 const KEY = "access_token";
+const REFRESH_KEY = "refresh_token";
 let memoryToken: string | null = null;
+let memoryRefreshToken: string | null = null;
 
 async function canUseSecureStore(): Promise<boolean> {
   try {
@@ -42,5 +44,34 @@ export async function deleteToken() {
     localStorage.removeItem(KEY);
   } else {
     memoryToken = null;
+  }
+}
+
+export async function saveRefreshToken(token: string) {
+  if (await canUseSecureStore()) {
+    await SecureStore.setItemAsync(REFRESH_KEY, token);
+  } else if (typeof localStorage !== "undefined") {
+    localStorage.setItem(REFRESH_KEY, token);
+  } else {
+    memoryRefreshToken = token; // last-resort fallback
+  }
+}
+
+export async function getRefreshToken(): Promise<string | null> {
+  if (await canUseSecureStore()) {
+    return await SecureStore.getItemAsync(REFRESH_KEY);
+  } else if (typeof localStorage !== "undefined") {
+    return localStorage.getItem(REFRESH_KEY);
+  }
+  return memoryRefreshToken;
+}
+
+export async function deleteRefreshToken() {
+  if (await canUseSecureStore()) {
+    await SecureStore.deleteItemAsync(REFRESH_KEY);
+  } else if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(REFRESH_KEY);
+  } else {
+    memoryRefreshToken = null;
   }
 }
