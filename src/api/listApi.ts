@@ -4,8 +4,10 @@ import { Item } from "../types/Item";
 
 // ── Lists ──────────────────────────────────────────────────────────────────
 
-export const getLists = async (): Promise<GroceryList[]> => {
-  const response = await apiClient.get<GroceryList[]>("/lists");
+export const getLists = async (options?: { includeArchived?: boolean }): Promise<GroceryList[]> => {
+  const response = await apiClient.get<GroceryList[]>("/lists", {
+    params: options?.includeArchived ? { include_archived: true } : undefined,
+  });
   return response.data;
 };
 
@@ -30,6 +32,19 @@ export const deleteList = async (listId: string): Promise<void> => {
 
 export const leaveList = async (listId: string): Promise<void> => {
   await apiClient.delete(`/lists/${listId}/leave`);
+};
+
+export const archiveList = async (listId: string): Promise<void> => {
+  await apiClient.patch(`/lists/${listId}/archive`);
+};
+
+export const unarchiveList = async (listId: string): Promise<void> => {
+  await apiClient.patch(`/lists/${listId}/unarchive`);
+};
+
+export const duplicateList = async (listId: string): Promise<GroceryList> => {
+  const response = await apiClient.post<GroceryList>(`/lists/${listId}/duplicate`);
+  return response.data;
 };
 
 // ── Sharing & invites ────────────────────────────────────────────────────────

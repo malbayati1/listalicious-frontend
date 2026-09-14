@@ -174,6 +174,58 @@ const styles = StyleSheet.create({
     marginTop: -10,
     marginBottom: 16,
   },
+
+  footerLinkRow: {
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 18,
+  },
+  footerLinkLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 14,
+    color: colors.muted,
+  },
+  archivedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    height: 60,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    marginBottom: 10,
+  },
+  archivedRowTitle: {
+    flex: 1,
+    minWidth: 0,
+    fontFamily: fonts.outfit500,
+    fontSize: 15,
+    color: colors.ink,
+  },
+  unarchivePill: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: colors.mintWash,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  unarchivePillLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 13,
+    color: colors.mint,
+  },
+  archivedEmptyText: {
+    fontFamily: fonts.outfit400,
+    fontSize: 14,
+    color: colors.muted,
+    textAlign: "center",
+    paddingVertical: 20,
+  },
 });
 
 export default styles;

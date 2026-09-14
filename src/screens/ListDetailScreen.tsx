@@ -8,15 +8,18 @@ import { useAudioPlayer } from "expo-audio";
 import {
   addItem,
   addItemsBulk,
+  archiveList,
   checkItem,
   clearCheckedItems,
   deleteItem,
   deleteList,
+  duplicateList,
   getItems,
   getList,
   leaveList,
   NewItemData,
   renameList,
+  unarchiveList,
   updateItem,
 } from "../api/listApi";
 import { Item } from "../types/Item";
@@ -88,6 +91,8 @@ export default function ListDetailScreen() {
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   const [celebrationTrigger, setCelebrationTrigger] = useState(0);
   const wasAllDone = useRef(false);
@@ -354,6 +359,54 @@ export default function ListDetailScreen() {
     submit();
   };
 
+  const handleDuplicate = () => {
+    if (!id) {
+      return;
+    }
+    closeManageSheet();
+    const submit = async () => {
+      setDuplicating(true);
+      try {
+        const created = await duplicateList(id);
+        showToast(`Duplicated as "${created.title}"`, selfInitial);
+        router.push({ pathname: "/(app)/list/[id]", params: { id: created._id, title: created.title } });
+      } catch (error) {
+        console.error("Failed to duplicate list:", error);
+        showToast("Couldn't duplicate this list", selfInitial);
+      } finally {
+        setDuplicating(false);
+      }
+    };
+    submit();
+  };
+
+  const handleArchiveToggle = () => {
+    if (!id || !list) {
+      return;
+    }
+    const wasArchived = list.archived;
+    const submit = async () => {
+      setArchiving(true);
+      try {
+        if (wasArchived) {
+          await unarchiveList(id);
+          setList((current) => (current ? { ...current, archived: false } : current));
+          showToast(`Unarchived "${displayTitle}"`, selfInitial);
+        } else {
+          await archiveList(id);
+          setList((current) => (current ? { ...current, archived: true } : current));
+          showToast(`Archived "${displayTitle}" — hidden from your list home`, selfInitial);
+        }
+        closeManageSheet();
+      } catch (error) {
+        console.error("Failed to toggle archive state:", error);
+      } finally {
+        setArchiving(false);
+      }
+    };
+    submit();
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar style="light" />
@@ -556,10 +609,24 @@ export default function ListDetailScreen() {
 
       <BottomSheet visible={manageSheet === "menu"} onClose={closeManageSheet}>
         <Text style={styles.sheetTitle}>{displayTitle}</Text>
+        <Pressable style={styles.manageMenuItem} onPress={handleDuplicate} disabled={duplicating}>
+          {duplicating ? (
+            <ActivityIndicator size="small" color={colors.ink} />
+          ) : (
+            <Text style={styles.manageMenuItemLabel}>Duplicate list</Text>
+          )}
+        </Pressable>
         {isOwner ? (
           <>
             <Pressable style={styles.manageMenuItem} onPress={openRenameSheet}>
               <Text style={styles.manageMenuItemLabel}>Rename list</Text>
+            </Pressable>
+            <Pressable style={styles.manageMenuItem} onPress={handleArchiveToggle} disabled={archiving}>
+              {archiving ? (
+                <ActivityIndicator size="small" color={colors.ink} />
+              ) : (
+                <Text style={styles.manageMenuItemLabel}>{list?.archived ? "Unarchive list" : "Archive list"}</Text>
+              )}
             </Pressable>
             <Pressable style={styles.manageMenuItem} onPress={() => setManageSheet("delete")}>
               <Text style={[styles.manageMenuItemLabel, styles.manageMenuItemDanger]}>Delete list</Text>
