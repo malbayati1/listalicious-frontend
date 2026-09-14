@@ -19,6 +19,15 @@ export const getList = async (listId: string): Promise<GroceryList> => {
   return response.data;
 };
 
+export const renameList = async (listId: string, title: string): Promise<GroceryList> => {
+  const response = await apiClient.put<GroceryList>(`/lists/${listId}`, { title });
+  return response.data;
+};
+
+export const deleteList = async (listId: string): Promise<void> => {
+  await apiClient.delete(`/lists/${listId}`);
+};
+
 // ── Sharing & invites ────────────────────────────────────────────────────────
 
 export type SharedUser = {

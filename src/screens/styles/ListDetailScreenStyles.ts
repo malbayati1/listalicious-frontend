@@ -344,6 +344,59 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.danger,
   },
+
+  // Manage list sheet (rename / delete)
+  sheetBody: {
+    fontFamily: fonts.outfit400,
+    fontSize: 15,
+    color: colors.muted,
+    marginBottom: 22,
+  },
+  manageMenuItem: {
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  manageMenuItemLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 16,
+    color: colors.ink,
+  },
+  manageMenuItemDanger: {
+    color: colors.danger,
+  },
+  removeButtonSolid: {
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  removeButtonSolidLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 15,
+    color: colors.danger,
+  },
+  manageCancel: {
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceRaised,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  manageCancelLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 15,
+    color: colors.ink,
+  },
 });
 
 export default styles;

@@ -37,22 +37,6 @@ const styles = StyleSheet.create({
   headerAvatarPressed: {
     opacity: 0.8,
   },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  headerIconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 15,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerIconButtonPressed: {
-    backgroundColor: colors.hover,
-  },
 
   cardList: {
     gap: 14,
@@ -189,39 +173,6 @@ const styles = StyleSheet.create({
     color: colors.danger,
     marginTop: -10,
     marginBottom: 16,
-  },
-  logoutSheetBody: {
-    fontFamily: fonts.outfit400,
-    fontSize: 15,
-    color: colors.muted,
-    marginBottom: 22,
-  },
-  logoutConfirm: {
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  logoutCancel: {
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceRaised,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutCancelLabel: {
-    fontFamily: fonts.outfit500,
-    fontSize: 15,
-    color: colors.ink,
-  },
-  logoutConfirmLabel: {
-    fontFamily: fonts.outfit500,
-    fontSize: 15,
-    color: colors.danger,
   },
 });
 

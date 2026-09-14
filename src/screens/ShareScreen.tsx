@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import {
   createInviteLink,
   getList,
@@ -46,6 +47,7 @@ export default function ShareScreen() {
   const insets = useSafeAreaInsets();
   const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [list, setList] = useState<GroceryList | null>(null);
   const [collaborators, setCollaborators] = useState<SharedUser[] | null>(null);
@@ -132,6 +134,7 @@ export default function ShareScreen() {
       try {
         await shareListWithEmail(id, trimmed);
         setAddEmail("");
+        showToast(`Invite sent to ${trimmed}`, user?.username || user?.email || "?");
         await load();
       } catch (error) {
         console.error("Failed to add collaborator:", error);

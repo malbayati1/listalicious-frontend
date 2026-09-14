@@ -21,7 +21,6 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     letterSpacing: -0.96,
     color: colors.ink,
-    marginTop: 14,
   },
   subtitle: {
     fontFamily: fonts.outfit400,

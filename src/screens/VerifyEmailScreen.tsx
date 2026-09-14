@@ -89,7 +89,7 @@ export default function VerifyEmailScreen() {
       try {
         await verifyEmail(token);
         await refreshUser();
-        router.replace("/(app)");
+        router.replace("/(app)/(tabs)");
       } catch (error) {
         console.error("Failed to verify email:", error);
         setVerifyError("That code didn't work. Check you copied the whole thing.");

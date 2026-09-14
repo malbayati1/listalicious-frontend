@@ -54,3 +54,15 @@ export const requestEmailVerification = async (): Promise<void> => {
 export const verifyEmail = async (token: string): Promise<void> => {
   await apiClient.post("/auth/verify-email", { token });
 };
+
+export const changeEmail = async (newEmail: string, password: string): Promise<void> => {
+  await apiClient.post("/auth/change-email", { new_email: newEmail, password });
+};
+
+export const confirmEmailChange = async (token: string): Promise<void> => {
+  await apiClient.post("/auth/confirm-email-change", { token });
+};
+
+export const logoutAllDevices = async (): Promise<void> => {
+  await apiClient.post("/auth/logout-all");
+};

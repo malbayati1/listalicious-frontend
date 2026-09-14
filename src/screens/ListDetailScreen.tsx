@@ -5,14 +5,28 @@ import { useFocusEffect } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAudioPlayer } from "expo-audio";
-import { addItem, checkItem, clearCheckedItems, deleteItem, getItems, updateItem } from "../api/listApi";
+import {
+  addItem,
+  checkItem,
+  clearCheckedItems,
+  deleteItem,
+  deleteList,
+  getItems,
+  getList,
+  renameList,
+  updateItem,
+} from "../api/listApi";
 import { Item } from "../types/Item";
+import { GroceryList } from "../types/GroceryList";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import BackButton from "../components/BackButton";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
 import Confetti from "../components/Confetti";
 import BarChartIcon from "../components/icons/BarChartIcon";
 import CheckIcon from "../components/icons/CheckIcon";
+import MoreIcon from "../components/icons/MoreIcon";
 import PlusIcon from "../components/icons/PlusIcon";
 import { colors } from "../theme/tokens";
 import styles from "./styles/ListDetailScreenStyles";
@@ -28,8 +42,12 @@ type SheetState =
 
 export default function ListDetailScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const selfInitial = user?.username || user?.email || "?";
   const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
   const [items, setItems] = useState<Item[] | null>(null);
+  const [list, setList] = useState<GroceryList | null>(null);
   const [loadError, setLoadError] = useState<string | undefined>();
   const [clearing, setClearing] = useState(false);
 
@@ -39,6 +57,12 @@ export default function ListDetailScreen() {
   const [draftNote, setDraftNote] = useState("");
   const [draftError, setDraftError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
+
+  const [manageSheet, setManageSheet] = useState<"closed" | "menu" | "rename" | "delete">("closed");
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState<string | undefined>();
+  const [renaming, setRenaming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [celebrationTrigger, setCelebrationTrigger] = useState(0);
   const wasAllDone = useRef(false);
@@ -50,8 +74,9 @@ export default function ListDetailScreen() {
     }
     setLoadError(undefined);
     try {
-      const fetched = await getItems(id);
-      setItems(fetched);
+      const [fetchedItems, fetchedList] = await Promise.all([getItems(id), getList(id)]);
+      setItems(fetchedItems);
+      setList(fetchedList);
     } catch (error) {
       console.error("Failed to load items:", error);
       setLoadError("Couldn't load this list. Check your connection and try again.");
@@ -126,6 +151,7 @@ export default function ListDetailScreen() {
         if (sheet.mode === "add") {
           const created = await addItem(id, { name: trimmedName, quantity: draftQty, note: draftNote.trim() });
           setItems((current) => (current ? [...current, created] : [created]));
+          showToast(`Added ${created.name}`, selfInitial);
         } else {
           const updated = await updateItem(id, sheet.item.id, {
             name: trimmedName,
@@ -133,6 +159,7 @@ export default function ListDetailScreen() {
             note: draftNote.trim(),
           });
           setItems((current) => (current ? current.map((i) => (i.id === updated.id ? updated : i)) : current));
+          showToast(`Updated ${updated.name}`, selfInitial);
         }
         closeSheet();
       } catch (error) {
@@ -150,11 +177,13 @@ export default function ListDetailScreen() {
       return;
     }
     const itemId = sheet.item.id;
+    const itemName = sheet.item.name;
     const submit = async () => {
       setSaving(true);
       try {
         await deleteItem(id, itemId);
         setItems((current) => (current ? current.filter((i) => i.id !== itemId) : current));
+        showToast(`Removed ${itemName}`, selfInitial);
         closeSheet();
       } catch (error) {
         console.error("Failed to remove item:", error);
@@ -192,6 +221,62 @@ export default function ListDetailScreen() {
     router.push({ pathname: "/(app)/list/[id]/stats", params: { id, title } });
   };
 
+  const isOwner = Boolean(list && user && list.owner_id === user._id);
+  const displayTitle = list?.title ?? title ?? "List";
+
+  const closeManageSheet = () => setManageSheet("closed");
+
+  const openRenameSheet = () => {
+    setRenameValue(displayTitle);
+    setRenameError(undefined);
+    setManageSheet("rename");
+  };
+
+  const handleRename = () => {
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      setRenameError("Give it a name first");
+      return;
+    }
+    if (!id) {
+      return;
+    }
+    setRenameError(undefined);
+    const submit = async () => {
+      setRenaming(true);
+      try {
+        const updated = await renameList(id, trimmed);
+        setList(updated);
+        closeManageSheet();
+        showToast(`Renamed to "${updated.title}"`, selfInitial);
+      } catch (error) {
+        console.error("Failed to rename list:", error);
+        setRenameError("Couldn't rename this list. Try again.");
+      } finally {
+        setRenaming(false);
+      }
+    };
+    submit();
+  };
+
+  const handleDelete = () => {
+    if (!id) {
+      return;
+    }
+    const submit = async () => {
+      setDeleting(true);
+      try {
+        await deleteList(id);
+        showToast(`Deleted "${displayTitle}"`, selfInitial);
+        router.replace("/(app)/(tabs)");
+      } catch (error) {
+        console.error("Failed to delete list:", error);
+        setDeleting(false);
+      }
+    };
+    submit();
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar style="light" />
@@ -219,6 +304,15 @@ export default function ListDetailScreen() {
                 >
                   <BarChartIcon size={18} color={colors.ink} />
                 </Pressable>
+                {isOwner ? (
+                  <Pressable
+                    testID="manage-list-button"
+                    onPress={() => setManageSheet("menu")}
+                    style={({ pressed }) => [styles.statsButton, pressed && styles.statsButtonPressed]}
+                  >
+                    <MoreIcon size={18} color={colors.ink} />
+                  </Pressable>
+                ) : null}
                 <Pressable
                   onPress={openShareScreen}
                   style={({ pressed }) => [styles.invitePill, pressed && styles.invitePillPressed]}
@@ -229,7 +323,7 @@ export default function ListDetailScreen() {
               </View>
             </View>
             <Text style={styles.title} numberOfLines={1}>
-              {title ?? "List"}
+              {displayTitle}
             </Text>
             <View style={styles.progressRow}>
               <View style={styles.progressTrack}>
@@ -313,7 +407,7 @@ export default function ListDetailScreen() {
       )}
 
       <BottomSheet visible={sheet.mode !== "closed"} onClose={closeSheet}>
-        <Text style={styles.sheetTitle}>{sheet.mode === "edit" ? "Edit item" : `Add to ${title ?? "list"}`}</Text>
+        <Text style={styles.sheetTitle}>{sheet.mode === "edit" ? "Edit item" : `Add to ${displayTitle}`}</Text>
         <TextInput
           autoFocus
           value={draftName}
@@ -357,6 +451,50 @@ export default function ListDetailScreen() {
             <Text style={styles.removeButtonLabel}>Remove from list</Text>
           </Pressable>
         ) : null}
+      </BottomSheet>
+
+      <BottomSheet visible={manageSheet === "menu"} onClose={closeManageSheet}>
+        <Text style={styles.sheetTitle}>{displayTitle}</Text>
+        <Pressable style={styles.manageMenuItem} onPress={openRenameSheet}>
+          <Text style={styles.manageMenuItemLabel}>Rename list</Text>
+        </Pressable>
+        <Pressable style={styles.manageMenuItem} onPress={() => setManageSheet("delete")}>
+          <Text style={[styles.manageMenuItemLabel, styles.manageMenuItemDanger]}>Delete list</Text>
+        </Pressable>
+      </BottomSheet>
+
+      <BottomSheet visible={manageSheet === "rename"} onClose={closeManageSheet}>
+        <Text style={styles.sheetTitle}>Rename list</Text>
+        <TextInput
+          autoFocus
+          value={renameValue}
+          onChangeText={setRenameValue}
+          placeholder="List name"
+          placeholderTextColor={colors.faint}
+          style={styles.nameInput}
+          onSubmitEditing={handleRename}
+          returnKeyType="done"
+        />
+        {renameError ? <Text style={styles.nameError}>{renameError}</Text> : null}
+        <PrimaryButton label="Save name" onPress={handleRename} loading={renaming} />
+      </BottomSheet>
+
+      <BottomSheet visible={manageSheet === "delete"} onClose={closeManageSheet}>
+        <Text style={styles.sheetTitle}>Delete "{displayTitle}"?</Text>
+        <Text style={styles.sheetBody}>
+          This removes the list, its items, and its activity history for everyone it's shared with. This can't be
+          undone.
+        </Text>
+        <Pressable style={styles.removeButtonSolid} onPress={handleDelete} disabled={deleting}>
+          {deleting ? (
+            <ActivityIndicator size="small" color={colors.danger} />
+          ) : (
+            <Text style={styles.removeButtonSolidLabel}>Delete list</Text>
+          )}
+        </Pressable>
+        <Pressable style={styles.manageCancel} onPress={closeManageSheet}>
+          <Text style={styles.manageCancelLabel}>Cancel</Text>
+        </Pressable>
       </BottomSheet>
 
       <Confetti trigger={celebrationTrigger} />

@@ -9,7 +9,6 @@ import { createList, getItems, getLists, getSharedUsers, SharedUser } from "../a
 import { GroceryList } from "../types/GroceryList";
 import Avatar from "../components/Avatar";
 import ProgressRing from "../components/ProgressRing";
-import ClockIcon from "../components/icons/ClockIcon";
 import PlusIcon from "../components/icons/PlusIcon";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
@@ -60,11 +59,11 @@ async function summarizeLists(lists: GroceryList[], selfId: string | undefined):
 
 export default function ListsHomeScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [lists, setLists] = useState<ListSummary[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | undefined>();
-  const [sheetMode, setSheetMode] = useState<"none" | "newList" | "logout">("none");
+  const [sheetMode, setSheetMode] = useState<"none" | "newList">("none");
   const [newListName, setNewListName] = useState("");
   const [newListError, setNewListError] = useState<string | undefined>();
   const [creating, setCreating] = useState(false);
@@ -125,14 +124,6 @@ export default function ListsHomeScreen() {
     submit();
   };
 
-  const handleLogout = () => {
-    const submit = async () => {
-      await logout();
-      router.replace("/(auth)");
-    };
-    submit();
-  };
-
   const selfInitial = user?.username || user?.email || "?";
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
@@ -152,7 +143,7 @@ export default function ListsHomeScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + insets.bottom }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}
           refreshControl={<RefreshControl tintColor={colors.mint} refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <View style={styles.header}>
@@ -160,17 +151,13 @@ export default function ListsHomeScreen() {
               <Text style={styles.headerDate}>{today}</Text>
               <Text style={styles.headerTitle}>Your lists</Text>
             </View>
-            <View style={styles.headerActions}>
-              <Pressable
-                onPress={() => router.push("/activity")}
-                style={({ pressed }) => [styles.headerIconButton, pressed && styles.headerIconButtonPressed]}
-              >
-                <ClockIcon size={18} color={colors.ink} />
-              </Pressable>
-              <Pressable onPress={() => setSheetMode("logout")} style={({ pressed }) => pressed && styles.headerAvatarPressed}>
-                <Avatar label={selfInitial} size={42} radius={15} fontSize={17} />
-              </Pressable>
-            </View>
+            <Pressable
+              testID="profile-avatar-button"
+              onPress={() => router.push("/profile")}
+              style={({ pressed }) => pressed && styles.headerAvatarPressed}
+            >
+              <Avatar label={selfInitial} size={42} radius={15} fontSize={17} />
+            </Pressable>
           </View>
 
           {lists && lists.length === 0 ? (
@@ -265,17 +252,6 @@ export default function ListsHomeScreen() {
         />
         {newListError ? <Text style={styles.sheetError}>{newListError}</Text> : null}
         <PrimaryButton label="Create list" onPress={handleCreateList} loading={creating} />
-      </BottomSheet>
-
-      <BottomSheet visible={sheetMode === "logout"} onClose={() => setSheetMode("none")}>
-        <Text style={styles.sheetTitle}>Log out?</Text>
-        <Text style={styles.logoutSheetBody}>You'll need your email and password to sign back in.</Text>
-        <Pressable style={styles.logoutConfirm} onPress={handleLogout}>
-          <Text style={styles.logoutConfirmLabel}>Log out</Text>
-        </Pressable>
-        <Pressable style={styles.logoutCancel} onPress={() => setSheetMode("none")}>
-          <Text style={styles.logoutCancelLabel}>Cancel</Text>
-        </Pressable>
       </BottomSheet>
     </SafeAreaView>
   );
