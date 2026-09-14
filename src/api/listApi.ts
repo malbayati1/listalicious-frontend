@@ -28,6 +28,10 @@ export const deleteList = async (listId: string): Promise<void> => {
   await apiClient.delete(`/lists/${listId}`);
 };
 
+export const leaveList = async (listId: string): Promise<void> => {
+  await apiClient.delete(`/lists/${listId}/leave`);
+};
+
 // ── Sharing & invites ────────────────────────────────────────────────────────
 
 export type SharedUser = {
