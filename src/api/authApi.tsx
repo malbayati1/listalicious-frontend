@@ -55,6 +55,14 @@ export const verifyEmail = async (token: string): Promise<void> => {
   await apiClient.post("/auth/verify-email", { token });
 };
 
+export const forgotPassword = async (email: string): Promise<void> => {
+  await apiClient.post("/auth/forgot-password", { email });
+};
+
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  await apiClient.post("/auth/reset-password", { token, new_password: newPassword });
+};
+
 export const changeEmail = async (newEmail: string, password: string): Promise<void> => {
   await apiClient.post("/auth/change-email", { new_email: newEmail, password });
 };

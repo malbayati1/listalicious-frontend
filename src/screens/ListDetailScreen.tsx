@@ -13,6 +13,7 @@ import {
   deleteList,
   getItems,
   getList,
+  leaveList,
   renameList,
   updateItem,
 } from "../api/listApi";
@@ -58,11 +59,12 @@ export default function ListDetailScreen() {
   const [draftError, setDraftError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
 
-  const [manageSheet, setManageSheet] = useState<"closed" | "menu" | "rename" | "delete">("closed");
+  const [manageSheet, setManageSheet] = useState<"closed" | "menu" | "rename" | "delete" | "leave">("closed");
   const [renameValue, setRenameValue] = useState("");
   const [renameError, setRenameError] = useState<string | undefined>();
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const [celebrationTrigger, setCelebrationTrigger] = useState(0);
   const wasAllDone = useRef(false);
@@ -277,6 +279,24 @@ export default function ListDetailScreen() {
     submit();
   };
 
+  const handleLeave = () => {
+    if (!id) {
+      return;
+    }
+    const submit = async () => {
+      setLeaving(true);
+      try {
+        await leaveList(id);
+        showToast(`Left "${displayTitle}"`, selfInitial);
+        router.replace("/(app)/(tabs)");
+      } catch (error) {
+        console.error("Failed to leave list:", error);
+        setLeaving(false);
+      }
+    };
+    submit();
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar style="light" />
@@ -304,15 +324,13 @@ export default function ListDetailScreen() {
                 >
                   <BarChartIcon size={18} color={colors.ink} />
                 </Pressable>
-                {isOwner ? (
-                  <Pressable
-                    testID="manage-list-button"
-                    onPress={() => setManageSheet("menu")}
-                    style={({ pressed }) => [styles.statsButton, pressed && styles.statsButtonPressed]}
-                  >
-                    <MoreIcon size={18} color={colors.ink} />
-                  </Pressable>
-                ) : null}
+                <Pressable
+                  testID="manage-list-button"
+                  onPress={() => setManageSheet("menu")}
+                  style={({ pressed }) => [styles.statsButton, pressed && styles.statsButtonPressed]}
+                >
+                  <MoreIcon size={18} color={colors.ink} />
+                </Pressable>
                 <Pressable
                   onPress={openShareScreen}
                   style={({ pressed }) => [styles.invitePill, pressed && styles.invitePillPressed]}
@@ -455,12 +473,20 @@ export default function ListDetailScreen() {
 
       <BottomSheet visible={manageSheet === "menu"} onClose={closeManageSheet}>
         <Text style={styles.sheetTitle}>{displayTitle}</Text>
-        <Pressable style={styles.manageMenuItem} onPress={openRenameSheet}>
-          <Text style={styles.manageMenuItemLabel}>Rename list</Text>
-        </Pressable>
-        <Pressable style={styles.manageMenuItem} onPress={() => setManageSheet("delete")}>
-          <Text style={[styles.manageMenuItemLabel, styles.manageMenuItemDanger]}>Delete list</Text>
-        </Pressable>
+        {isOwner ? (
+          <>
+            <Pressable style={styles.manageMenuItem} onPress={openRenameSheet}>
+              <Text style={styles.manageMenuItemLabel}>Rename list</Text>
+            </Pressable>
+            <Pressable style={styles.manageMenuItem} onPress={() => setManageSheet("delete")}>
+              <Text style={[styles.manageMenuItemLabel, styles.manageMenuItemDanger]}>Delete list</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Pressable style={styles.manageMenuItem} onPress={() => setManageSheet("leave")}>
+            <Text style={[styles.manageMenuItemLabel, styles.manageMenuItemDanger]}>Leave list</Text>
+          </Pressable>
+        )}
       </BottomSheet>
 
       <BottomSheet visible={manageSheet === "rename"} onClose={closeManageSheet}>
@@ -490,6 +516,23 @@ export default function ListDetailScreen() {
             <ActivityIndicator size="small" color={colors.danger} />
           ) : (
             <Text style={styles.removeButtonSolidLabel}>Delete list</Text>
+          )}
+        </Pressable>
+        <Pressable style={styles.manageCancel} onPress={closeManageSheet}>
+          <Text style={styles.manageCancelLabel}>Cancel</Text>
+        </Pressable>
+      </BottomSheet>
+
+      <BottomSheet visible={manageSheet === "leave"} onClose={closeManageSheet}>
+        <Text style={styles.sheetTitle}>Leave "{displayTitle}"?</Text>
+        <Text style={styles.sheetBody}>
+          You'll lose access to this list. Anyone still on it can re-invite you later if you change your mind.
+        </Text>
+        <Pressable style={styles.removeButtonSolid} onPress={handleLeave} disabled={leaving}>
+          {leaving ? (
+            <ActivityIndicator size="small" color={colors.danger} />
+          ) : (
+            <Text style={styles.removeButtonSolidLabel}>Leave list</Text>
           )}
         </Pressable>
         <Pressable style={styles.manageCancel} onPress={closeManageSheet}>
