@@ -1,17 +1,45 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { changeEmail, changePassword, confirmEmailChange, logoutAllDevices, updateUsername } from "../api/authApi";
+import {
+  changeEmail,
+  changePassword,
+  confirmEmailChange,
+  getSessions,
+  logoutAllDevices,
+  revokeSession,
+  Session,
+  updateUsername,
+} from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
+import { getToken } from "../utils/tokenStorage";
+import { decodeJwtPayload } from "../utils/decodeJwt";
 import PrimaryButton from "../components/PrimaryButton";
 import BottomSheet from "../components/BottomSheet";
 import ChevronRightIcon from "../components/icons/ChevronRightIcon";
 import { colors } from "../theme/tokens";
 import styles from "./styles/ProfileScreenStyles";
 
-type SheetMode = "none" | "editName" | "changeEmail" | "confirmEmailChange" | "changePassword" | "signOutEverywhere" | "logout";
+type SheetMode =
+  | "none"
+  | "editName"
+  | "changeEmail"
+  | "confirmEmailChange"
+  | "changePassword"
+  | "sessions"
+  | "signOutEverywhere"
+  | "logout";
+
+function formatSessionDate(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 function parseAuthError(error: unknown, fallback: string): string {
   const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
@@ -44,6 +72,10 @@ export default function ProfileScreen() {
   const [pendingEmail, setPendingEmail] = useState("");
 
   const [signingOutEverywhere, setSigningOutEverywhere] = useState(false);
+
+  const [sessions, setSessions] = useState<Session[] | null>(null);
+  const [currentJti, setCurrentJti] = useState<string | null>(null);
+  const [revokingJti, setRevokingJti] = useState<string | null>(null);
 
   const [currentPasswordForChange, setCurrentPasswordForChange] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -185,6 +217,46 @@ export default function ProfileScreen() {
     submit();
   };
 
+  const openSessions = () => {
+    setSheetMode("sessions");
+    setSessions(null);
+    const load = async () => {
+      try {
+        const [list, token] = await Promise.all([getSessions(), getToken()]);
+        const payload = token ? decodeJwtPayload(token) : null;
+        setCurrentJti(typeof payload?.jti === "string" ? payload.jti : null);
+        setSessions(list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      } catch (error) {
+        console.error("Failed to load sessions:", error);
+        setSessions([]);
+      }
+    };
+    load();
+  };
+
+  const handleRevokeSession = (session: Session) => {
+    const isCurrent = session.jti === currentJti;
+    const submit = async () => {
+      setRevokingJti(session.jti);
+      try {
+        await revokeSession(session.jti);
+        setSessions((current) => (current ? current.filter((s) => s.jti !== session.jti) : current));
+        if (isCurrent) {
+          // We just killed the session we're using right now — reflect that
+          // locally instead of waiting on a request to eventually 401.
+          closeSheet();
+          await logout();
+          router.replace("/(auth)");
+        }
+      } catch (error) {
+        console.error("Failed to revoke session:", error);
+      } finally {
+        setRevokingJti(null);
+      }
+    };
+    submit();
+  };
+
   const handleSignOutEverywhere = () => {
     const submit = async () => {
       setSigningOutEverywhere(true);
@@ -284,6 +356,17 @@ export default function ProfileScreen() {
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Change password</Text>
               <Text style={styles.settingMeta}>Signs you out everywhere else</Text>
+            </View>
+            <ChevronRightIcon />
+          </Pressable>
+
+          <Pressable
+            onPress={openSessions}
+            style={({ pressed }) => [styles.settingRow, pressed && styles.settingRowPressed]}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Active sessions</Text>
+              <Text style={styles.settingMeta}>See and sign out individual devices</Text>
             </View>
             <ChevronRightIcon />
           </Pressable>
@@ -424,6 +507,45 @@ export default function ProfileScreen() {
             {changePasswordError ? <Text style={styles.error}>{changePasswordError}</Text> : null}
             <PrimaryButton label="Change password" onPress={handleSubmitChangePassword} loading={changingPassword} />
           </>
+        )}
+      </BottomSheet>
+
+      <BottomSheet visible={sheetMode === "sessions"} onClose={closeSheet}>
+        <Text style={styles.sheetTitle}>Active sessions</Text>
+        <Text style={styles.sheetBody}>
+          Every device currently signed in. Revoking one blocks it from using its current access token.
+        </Text>
+        {sessions === null ? (
+          <View style={{ paddingVertical: 20, alignItems: "center" }}>
+            <ActivityIndicator size="small" color={colors.mint} />
+          </View>
+        ) : sessions.length === 0 ? (
+          <Text style={styles.sheetBody}>No active sessions found.</Text>
+        ) : (
+          sessions.map((session) => (
+            <View key={session.jti} style={styles.sessionRow}>
+              <View style={styles.sessionInfo}>
+                <Text style={styles.settingLabel}>Signed in {formatSessionDate(session.created_at)}</Text>
+                <Text style={styles.sessionMeta}>Expires {formatSessionDate(session.expires_at)}</Text>
+                {session.jti === currentJti ? (
+                  <View style={styles.sessionBadge}>
+                    <Text style={styles.sessionBadgeLabel}>THIS DEVICE</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Pressable
+                style={styles.sessionRevokeButton}
+                onPress={() => handleRevokeSession(session)}
+                disabled={revokingJti !== null}
+              >
+                {revokingJti === session.jti ? (
+                  <ActivityIndicator size="small" color={colors.danger} />
+                ) : (
+                  <Text style={styles.sessionRevokeLabel}>Revoke</Text>
+                )}
+              </Pressable>
+            </View>
+          ))
         )}
       </BottomSheet>
 

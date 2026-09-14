@@ -87,3 +87,18 @@ export const confirmEmailChange = async (token: string): Promise<void> => {
 export const logoutAllDevices = async (): Promise<void> => {
   await apiClient.post("/auth/logout-all");
 };
+
+export type Session = {
+  jti: string;
+  created_at: string;
+  expires_at: string;
+};
+
+export const getSessions = async (): Promise<Session[]> => {
+  const response = await apiClient.get<Session[]>("/auth/sessions");
+  return response.data;
+};
+
+export const revokeSession = async (jti: string): Promise<void> => {
+  await apiClient.delete(`/auth/sessions/${jti}`);
+};
