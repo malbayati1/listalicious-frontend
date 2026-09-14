@@ -16,9 +16,12 @@ import {
   duplicateList,
   getItems,
   getList,
+  getLists,
   leaveList,
+  moveItem,
   NewItemData,
   renameList,
+  reorderItems,
   unarchiveList,
   updateItem,
 } from "../api/listApi";
@@ -32,6 +35,8 @@ import BottomSheet from "../components/BottomSheet";
 import Confetti from "../components/Confetti";
 import BarChartIcon from "../components/icons/BarChartIcon";
 import CheckIcon from "../components/icons/CheckIcon";
+import ChevronDownIcon from "../components/icons/ChevronDownIcon";
+import ChevronUpIcon from "../components/icons/ChevronUpIcon";
 import MoreIcon from "../components/icons/MoreIcon";
 import PlusIcon from "../components/icons/PlusIcon";
 import { colors } from "../theme/tokens";
@@ -93,6 +98,12 @@ export default function ListDetailScreen() {
   const [leaving, setLeaving] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [archiving, setArchiving] = useState(false);
+
+  const [reorderMode, setReorderMode] = useState(false);
+
+  const [movingItem, setMovingItem] = useState<Item | null>(null);
+  const [moveTargets, setMoveTargets] = useState<GroceryList[] | null>(null);
+  const [movingTargetId, setMovingTargetId] = useState<string | null>(null);
 
   const [celebrationTrigger, setCelebrationTrigger] = useState(0);
   const wasAllDone = useRef(false);
@@ -254,6 +265,73 @@ export default function ListDetailScreen() {
         setDraftError("Couldn't remove that item. Try again.");
       } finally {
         setSaving(false);
+      }
+    };
+    submit();
+  };
+
+  const handleMoveUp = (index: number) => {
+    if (!id || !items || index <= 0) {
+      return;
+    }
+    const reordered = [...items];
+    [reordered[index - 1], reordered[index]] = [reordered[index], reordered[index - 1]];
+    setItems(reordered);
+    reorderItems(id, reordered.map((i) => i.id)).catch((error) => {
+      console.error("Failed to reorder items:", error);
+    });
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (!id || !items || index >= items.length - 1) {
+      return;
+    }
+    const reordered = [...items];
+    [reordered[index], reordered[index + 1]] = [reordered[index + 1], reordered[index]];
+    setItems(reordered);
+    reorderItems(id, reordered.map((i) => i.id)).catch((error) => {
+      console.error("Failed to reorder items:", error);
+    });
+  };
+
+  const openMoveSheet = () => {
+    if (sheet.mode !== "edit" || !id) {
+      return;
+    }
+    const item = sheet.item;
+    setMovingItem(item);
+    setMoveTargets(null);
+    closeSheet();
+    getLists()
+      .then((lists) => setMoveTargets(lists.filter((l) => l._id !== id && !l.archived)))
+      .catch((error) => {
+        console.error("Failed to load lists to move into:", error);
+        setMoveTargets([]);
+      });
+  };
+
+  const closeMoveSheet = () => {
+    setMovingItem(null);
+    setMoveTargets(null);
+  };
+
+  const handleMoveConfirm = (target: GroceryList) => {
+    if (!id || !movingItem) {
+      return;
+    }
+    const itemId = movingItem.id;
+    const itemName = movingItem.name;
+    const submit = async () => {
+      setMovingTargetId(target._id);
+      try {
+        await moveItem(id, itemId, target._id);
+        setItems((current) => (current ? current.filter((i) => i.id !== itemId) : current));
+        showToast(`Moved ${itemName} to "${target.title}"`, selfInitial);
+        closeMoveSheet();
+      } catch (error) {
+        console.error("Failed to move item:", error);
+      } finally {
+        setMovingTargetId(null);
       }
     };
     submit();
@@ -473,34 +551,79 @@ export default function ListDetailScreen() {
                 <View style={styles.groupHeader}>
                   <Text style={styles.groupLabel}>ITEMS</Text>
                   <View style={styles.groupHairline} />
+                  {total >= 2 ? (
+                    <Pressable onPress={() => setReorderMode((v) => !v)} hitSlop={8}>
+                      <Text style={styles.reorderToggle}>{reorderMode ? "Done" : "Reorder"}</Text>
+                    </Pressable>
+                  ) : null}
                   <Text style={styles.groupCount}>{total}</Text>
                 </View>
                 <View style={styles.itemList}>
-                  {items?.map((item) => (
-                    <View key={item.id} style={styles.itemRow}>
-                      <Pressable
-                        testID={`item-checkbox-${item.id}`}
-                        onPress={() => handleToggle(item)}
-                        style={[styles.checkbox, item.is_checked && styles.checkboxChecked]}
-                        hitSlop={8}
-                      >
-                        {item.is_checked ? <CheckIcon /> : null}
-                      </Pressable>
-                      <Pressable style={styles.itemTextBlock} onPress={() => openEditSheet(item)}>
-                        <Text style={[styles.itemName, item.is_checked && styles.itemNameChecked]} numberOfLines={1}>
-                          {item.name}
-                        </Text>
-                        <View style={styles.itemMetaRow}>
-                          <Text style={styles.itemQty}>{itemQtyLabel(item)}</Text>
-                          {item.note ? (
-                            <Text style={styles.itemNote} numberOfLines={1}>
-                              · {item.note}
-                            </Text>
-                          ) : null}
+                  {items?.map((item, index) =>
+                    reorderMode ? (
+                      <View key={item.id} style={styles.itemRow}>
+                        <View style={styles.reorderArrows}>
+                          <Pressable
+                            testID={`item-move-up-${item.id}`}
+                            style={[styles.reorderArrowButton, index === 0 && styles.reorderArrowButtonDisabled]}
+                            onPress={() => handleMoveUp(index)}
+                            disabled={index === 0}
+                            hitSlop={4}
+                          >
+                            <ChevronUpIcon size={16} color={index === 0 ? colors.disabledStrong : colors.ink} />
+                          </Pressable>
+                          <Pressable
+                            testID={`item-move-down-${item.id}`}
+                            style={[
+                              styles.reorderArrowButton,
+                              index === total - 1 && styles.reorderArrowButtonDisabled,
+                            ]}
+                            onPress={() => handleMoveDown(index)}
+                            disabled={index === total - 1}
+                            hitSlop={4}
+                          >
+                            <ChevronDownIcon
+                              size={16}
+                              color={index === total - 1 ? colors.disabledStrong : colors.ink}
+                            />
+                          </Pressable>
                         </View>
-                      </Pressable>
-                    </View>
-                  ))}
+                        <View style={styles.itemTextBlock}>
+                          <Text style={styles.itemName} numberOfLines={1}>
+                            {item.name}
+                          </Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <View key={item.id} style={styles.itemRow}>
+                        <Pressable
+                          testID={`item-checkbox-${item.id}`}
+                          onPress={() => handleToggle(item)}
+                          style={[styles.checkbox, item.is_checked && styles.checkboxChecked]}
+                          hitSlop={8}
+                        >
+                          {item.is_checked ? <CheckIcon /> : null}
+                        </Pressable>
+                        <Pressable style={styles.itemTextBlock} onPress={() => openEditSheet(item)}>
+                          <Text
+                            testID="item-name"
+                            style={[styles.itemName, item.is_checked && styles.itemNameChecked]}
+                            numberOfLines={1}
+                          >
+                            {item.name}
+                          </Text>
+                          <View style={styles.itemMetaRow}>
+                            <Text style={styles.itemQty}>{itemQtyLabel(item)}</Text>
+                            {item.note ? (
+                              <Text style={styles.itemNote} numberOfLines={1}>
+                                · {item.note}
+                              </Text>
+                            ) : null}
+                          </View>
+                        </Pressable>
+                      </View>
+                    )
+                  )}
                 </View>
 
                 {allDone ? (
@@ -595,9 +718,14 @@ export default function ListDetailScreen() {
               loading={saving}
             />
             {sheet.mode === "edit" ? (
-              <Pressable style={styles.removeButton} onPress={handleRemove}>
-                <Text style={styles.removeButtonLabel}>Remove from list</Text>
-              </Pressable>
+              <>
+                <Pressable style={styles.bulkToggle} onPress={openMoveSheet}>
+                  <Text style={styles.bulkToggleLabel}>Move to another list</Text>
+                </Pressable>
+                <Pressable style={styles.removeButton} onPress={handleRemove}>
+                  <Text style={styles.removeButtonLabel}>Remove from list</Text>
+                </Pressable>
+              </>
             ) : (
               <Pressable style={styles.bulkToggle} onPress={() => setBulkMode(true)}>
                 <Text style={styles.bulkToggleLabel}>Paste multiple items at once</Text>
@@ -688,6 +816,34 @@ export default function ListDetailScreen() {
         <Pressable style={styles.manageCancel} onPress={closeManageSheet}>
           <Text style={styles.manageCancelLabel}>Cancel</Text>
         </Pressable>
+      </BottomSheet>
+
+      <BottomSheet visible={movingItem !== null} onClose={closeMoveSheet}>
+        <Text style={styles.sheetTitle}>Move "{movingItem?.name}" to…</Text>
+        {moveTargets === null ? (
+          <View style={{ paddingVertical: 20, alignItems: "center" }}>
+            <ActivityIndicator size="small" color={colors.mint} />
+          </View>
+        ) : moveTargets.length === 0 ? (
+          <Text style={styles.sheetBody}>You don't have any other lists yet.</Text>
+        ) : (
+          moveTargets.map((target) => (
+            <Pressable
+              key={target._id}
+              style={styles.manageMenuItem}
+              onPress={() => handleMoveConfirm(target)}
+              disabled={movingTargetId !== null}
+            >
+              {movingTargetId === target._id ? (
+                <ActivityIndicator size="small" color={colors.ink} />
+              ) : (
+                <Text style={styles.manageMenuItemLabel} numberOfLines={1}>
+                  {target.title}
+                </Text>
+              )}
+            </Pressable>
+          ))
+        )}
       </BottomSheet>
 
       <Confetti trigger={celebrationTrigger} />
