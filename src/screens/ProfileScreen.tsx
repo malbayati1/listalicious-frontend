@@ -80,6 +80,8 @@ export default function ProfileScreen() {
   const [revokingJti, setRevokingJti] = useState<string | null>(null);
 
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | undefined>();
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [currentPasswordForChange, setCurrentPasswordForChange] = useState("");
@@ -287,18 +289,26 @@ export default function ProfileScreen() {
 
   const openDeleteAccount = () => {
     setDeleteConfirmText("");
+    setDeletePassword("");
+    setDeleteError(undefined);
     setSheetMode("deleteAccount");
   };
 
   const handleDeleteAccount = () => {
+    if (!deletePassword) {
+      setDeleteError("Enter your password");
+      return;
+    }
+    setDeleteError(undefined);
     const submit = async () => {
       setDeletingAccount(true);
       try {
-        await deleteAccount();
+        await deleteAccount(deletePassword);
         await logout();
         router.replace("/(auth)");
       } catch (error) {
         console.error("Failed to delete account:", error);
+        setDeleteError(parseAuthError(error, "Couldn't delete your account. Try again."));
         setDeletingAccount(false);
       }
     };
@@ -608,6 +618,15 @@ export default function ProfileScreen() {
           This permanently deletes your account, every list you own and its items, and removes you from every list
           shared with you. This can't be undone.
         </Text>
+        <Text style={styles.fieldLabel}>Current password</Text>
+        <TextInput
+          value={deletePassword}
+          onChangeText={setDeletePassword}
+          placeholder="Enter your password"
+          placeholderTextColor={colors.faint}
+          secureTextEntry
+          style={styles.input}
+        />
         <Text style={styles.fieldLabel}>Type DELETE to confirm</Text>
         <TextInput
           value={deleteConfirmText}
@@ -617,7 +636,9 @@ export default function ProfileScreen() {
           autoCapitalize="characters"
           autoCorrect={false}
           style={styles.input}
+          onSubmitEditing={handleDeleteAccount}
         />
+        {deleteError ? <Text style={styles.error}>{deleteError}</Text> : null}
         <Pressable
           style={styles.sheetDangerButton}
           onPress={handleDeleteAccount}

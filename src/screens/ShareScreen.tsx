@@ -15,7 +15,7 @@ import {
   SharedUser,
   unshareListWithEmail,
 } from "../api/listApi";
-import { searchUsers, UserSearchResult } from "../api/usersApi";
+import { getUserById, PublicUser, searchUsers, UserSearchResult } from "../api/usersApi";
 import { GroceryList } from "../types/GroceryList";
 import Avatar from "../components/Avatar";
 import BackButton from "../components/BackButton";
@@ -55,6 +55,7 @@ export default function ShareScreen() {
 
   const [list, setList] = useState<GroceryList | null>(null);
   const [collaborators, setCollaborators] = useState<SharedUser[] | null>(null);
+  const [owner, setOwner] = useState<PublicUser | null>(null);
   const [loadError, setLoadError] = useState<string | undefined>();
 
   const [inviteToken, setInviteToken] = useState<string | undefined>();
@@ -85,11 +86,16 @@ export default function ShareScreen() {
       const [listData, sharedUsers] = await Promise.all([getList(id), getSharedUsers(id)]);
       setList(listData);
       setCollaborators(sharedUsers);
+      if (user && listData.owner_id !== user._id) {
+        getUserById(listData.owner_id)
+          .then(setOwner)
+          .catch((error) => console.error("Failed to load list owner:", error));
+      }
     } catch (error) {
       console.error("Failed to load collaborators:", error);
       setLoadError("Couldn't load this list's collaborators. Check your connection and try again.");
     }
-  }, [id]);
+  }, [id, user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -299,6 +305,24 @@ export default function ShareScreen() {
 
             <Text style={styles.sectionLabel}>COLLABORATORS</Text>
             <View style={styles.collaboratorList}>
+              {!isOwner && owner ? (
+                <View style={styles.collaboratorRow}>
+                  <Avatar
+                    label={personLabel(owner)}
+                    size={40}
+                    radius={14}
+                    fontSize={16}
+                    backgroundColor={personColor(owner.id)}
+                    textColor={colors.mintInk}
+                  />
+                  <View style={styles.collaboratorInfo}>
+                    <Text style={styles.collaboratorName}>{personLabel(owner)}</Text>
+                    <Text style={styles.collaboratorMeta}>{owner.email}</Text>
+                  </View>
+                  <Text style={styles.collaboratorRole}>owner</Text>
+                </View>
+              ) : null}
+
               <View style={styles.collaboratorRow}>
                 <Avatar
                   label={user ? personLabel(user) : "?"}
