@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useFocusEffect } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../context/AuthContext";
-import { ActivityEntry, getListActivity, getLists, getSharedUsers } from "../api/listApi";
+import { ActivityEntry, getGlobalActivity, getLists, getSharedUsers } from "../api/listApi";
 import PrimaryButton from "../components/PrimaryButton";
 import { colors } from "../theme/tokens";
 import styles from "./styles/ActivityScreenStyles";
@@ -94,11 +94,8 @@ export default function ActivityScreen() {
   const load = useCallback(async () => {
     setLoadError(undefined);
     try {
-      const lists = await getLists();
-      const [activityResults, sharedResults] = await Promise.all([
-        Promise.allSettled(lists.map((list) => getListActivity(list._id, 50))),
-        Promise.allSettled(lists.map((list) => getSharedUsers(list._id))),
-      ]);
+      const [lists, globalFeed] = await Promise.all([getLists(), getGlobalActivity(60)]);
+      const sharedResults = await Promise.allSettled(lists.map((list) => getSharedUsers(list._id)));
 
       const listTitleById = new Map(lists.map((list) => [list._id, list.title]));
 
@@ -112,17 +109,14 @@ export default function ActivityScreen() {
         }
       });
 
-      const merged: FeedEntry[] = [];
-      activityResults.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          const listTitle = lists[index].title;
-          result.value.forEach((entry) => merged.push({ ...entry, listTitle }));
-        }
-      });
-      merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Global feed is already newest-first server-side — no client merge/sort needed.
+      const merged: FeedEntry[] = globalFeed.map((entry) => ({
+        ...entry,
+        listTitle: listTitleById.get(entry.list_id) ?? "a list",
+      }));
 
       setNameByEmail(names);
-      setFeed(merged.slice(0, 60));
+      setFeed(merged);
       // stash for describeActivity's list-title lookups on move actions
       listTitleByIdRef.current = listTitleById;
     } catch (error) {

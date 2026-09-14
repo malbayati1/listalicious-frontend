@@ -116,6 +116,11 @@ export const getListActivity = async (listId: string, limit = 100): Promise<Acti
   return response.data;
 };
 
+export const getGlobalActivity = async (limit = 60, skip = 0): Promise<ActivityEntry[]> => {
+  const response = await apiClient.get<ActivityEntry[]>("/lists/activity", { params: { limit, skip } });
+  return response.data;
+};
+
 // ── Items ──────────────────────────────────────────────────────────────────
 
 export type NewItemData = {
