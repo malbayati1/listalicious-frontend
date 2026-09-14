@@ -176,3 +176,14 @@ export const clearCheckedItems = async (listId: string): Promise<void> => {
   await apiClient.delete(`/lists/${listId}/items/checked`);
 };
 
+export const reorderItems = async (listId: string, orderedItemIds: string[]): Promise<void> => {
+  await apiClient.patch(`/lists/${listId}/items/reorder`, { order: orderedItemIds });
+};
+
+export const moveItem = async (listId: string, itemId: string, targetListId: string): Promise<Item> => {
+  const response = await apiClient.patch<RawItem>(`/lists/${listId}/items/${itemId}/move`, {
+    target_list_id: targetListId,
+  });
+  return normalizeItem(response.data);
+};
+

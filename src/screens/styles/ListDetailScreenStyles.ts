@@ -110,9 +110,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.disabledStrong,
   },
+  reorderToggle: {
+    fontFamily: fonts.outfit500,
+    fontSize: 13,
+    color: colors.mint,
+  },
   itemList: {
     gap: 8,
     marginBottom: 22,
+  },
+  reorderArrows: {
+    gap: 4,
+  },
+  reorderArrowButton: {
+    width: 28,
+    height: 22,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceRaised,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reorderArrowButtonDisabled: {
+    opacity: 0.4,
   },
   itemRow: {
     flexDirection: "row",
