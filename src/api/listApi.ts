@@ -127,6 +127,18 @@ export const addItem = async (listId: string, data: NewItemData): Promise<Item> 
   return normalizeItem(response.data);
 };
 
+export const addItemsBulk = async (listId: string, items: NewItemData[]): Promise<Item[]> => {
+  const response = await apiClient.post<RawItem[]>(`/lists/${listId}/items/bulk`, {
+    items: items.map((data) => ({
+      name: data.name,
+      quantity: data.quantity,
+      note: data.note || undefined,
+      is_checked: false,
+    })),
+  });
+  return response.data.map(normalizeItem);
+};
+
 export const updateItem = async (listId: string, itemId: string, data: NewItemData): Promise<Item> => {
   const response = await apiClient.put<RawItem>(`/lists/${listId}/items/${itemId}`, {
     name: data.name,

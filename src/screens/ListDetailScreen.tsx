@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useAudioPlayer } from "expo-audio";
 import {
   addItem,
+  addItemsBulk,
   checkItem,
   clearCheckedItems,
   deleteItem,
@@ -14,6 +15,7 @@ import {
   getItems,
   getList,
   leaveList,
+  NewItemData,
   renameList,
   updateItem,
 } from "../api/listApi";
@@ -34,6 +36,22 @@ import styles from "./styles/ListDetailScreenStyles";
 
 function itemQtyLabel(item: Item): string {
   return item.unit ? `${item.quantity} × ${item.unit}` : `×${item.quantity}`;
+}
+
+const BULK_LINE_PATTERN = /^(\d+)\s*[xX]?\s+(.+)$/;
+
+function parseBulkLines(text: string): NewItemData[] {
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const match = line.match(BULK_LINE_PATTERN);
+      if (match) {
+        return { name: match[2].trim(), quantity: Math.max(1, parseInt(match[1], 10)) };
+      }
+      return { name: line, quantity: 1 };
+    });
 }
 
 type SheetState =
@@ -58,6 +76,11 @@ export default function ListDetailScreen() {
   const [draftNote, setDraftNote] = useState("");
   const [draftError, setDraftError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
+
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkError, setBulkError] = useState<string | undefined>();
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const [manageSheet, setManageSheet] = useState<"closed" | "menu" | "rename" | "delete" | "leave">("closed");
   const [renameValue, setRenameValue] = useState("");
@@ -124,6 +147,9 @@ export default function ListDetailScreen() {
     setDraftQty(1);
     setDraftNote("");
     setDraftError(undefined);
+    setBulkMode(false);
+    setBulkText("");
+    setBulkError(undefined);
     setSheet({ mode: "add" });
   };
 
@@ -169,6 +195,37 @@ export default function ListDetailScreen() {
         setDraftError("Couldn't save that item. Try again.");
       } finally {
         setSaving(false);
+      }
+    };
+    submit();
+  };
+
+  const handleBulkCommit = () => {
+    const parsed = parseBulkLines(bulkText);
+    if (parsed.length === 0) {
+      setBulkError("Add at least one item, one per line");
+      return;
+    }
+    if (parsed.length > 50) {
+      setBulkError("That's a lot — split it into batches of 50 or fewer");
+      return;
+    }
+    if (!id) {
+      return;
+    }
+    setBulkError(undefined);
+    const submit = async () => {
+      setBulkSaving(true);
+      try {
+        const created = await addItemsBulk(id, parsed);
+        setItems((current) => (current ? [...current, ...created] : created));
+        showToast(`Added ${created.length} item${created.length === 1 ? "" : "s"}`, selfInitial);
+        closeSheet();
+      } catch (error) {
+        console.error("Failed to bulk add items:", error);
+        setBulkError("Couldn't add those items. Try again.");
+      } finally {
+        setBulkSaving(false);
       }
     };
     submit();
@@ -425,50 +482,76 @@ export default function ListDetailScreen() {
       )}
 
       <BottomSheet visible={sheet.mode !== "closed"} onClose={closeSheet}>
-        <Text style={styles.sheetTitle}>{sheet.mode === "edit" ? "Edit item" : `Add to ${displayTitle}`}</Text>
-        <TextInput
-          autoFocus
-          value={draftName}
-          onChangeText={setDraftName}
-          placeholder="What are we buying?"
-          placeholderTextColor={colors.faint}
-          style={styles.nameInput}
-        />
-        {draftError ? <Text style={styles.nameError}>{draftError}</Text> : null}
-        <View style={styles.sheetRow}>
-          <View style={styles.stepper}>
-            <Pressable
-              style={({ pressed }) => [styles.stepperButton, pressed && styles.stepperButtonPressed]}
-              onPress={() => setDraftQty((q) => Math.max(1, q - 1))}
-            >
-              <Text style={styles.stepperButtonLabel}>−</Text>
+        {bulkMode ? (
+          <>
+            <Text style={styles.sheetTitle}>Paste a list</Text>
+            <TextInput
+              autoFocus
+              multiline
+              value={bulkText}
+              onChangeText={setBulkText}
+              placeholder={"One item per line, e.g.\nBananas\n2 Milk\n3x Eggs"}
+              placeholderTextColor={colors.faint}
+              style={styles.bulkInput}
+            />
+            {bulkError ? <Text style={styles.nameError}>{bulkError}</Text> : null}
+            <PrimaryButton label="Add items" onPress={handleBulkCommit} loading={bulkSaving} />
+            <Pressable style={styles.bulkToggle} onPress={() => setBulkMode(false)}>
+              <Text style={styles.bulkToggleLabel}>Back to adding one at a time</Text>
             </Pressable>
-            <Text style={styles.stepperValue}>{draftQty}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.stepperButton, pressed && styles.stepperButtonPressed]}
-              onPress={() => setDraftQty((q) => Math.min(9999, q + 1))}
-            >
-              <Text style={styles.stepperButtonLabel}>+</Text>
-            </Pressable>
-          </View>
-          <TextInput
-            value={draftNote}
-            onChangeText={setDraftNote}
-            placeholder="Note — brand, ripeness…"
-            placeholderTextColor={colors.faint}
-            style={styles.noteInput}
-          />
-        </View>
-        <PrimaryButton
-          label={sheet.mode === "edit" ? "Save changes" : "Add it"}
-          onPress={handleCommit}
-          loading={saving}
-        />
-        {sheet.mode === "edit" ? (
-          <Pressable style={styles.removeButton} onPress={handleRemove}>
-            <Text style={styles.removeButtonLabel}>Remove from list</Text>
-          </Pressable>
-        ) : null}
+          </>
+        ) : (
+          <>
+            <Text style={styles.sheetTitle}>{sheet.mode === "edit" ? "Edit item" : `Add to ${displayTitle}`}</Text>
+            <TextInput
+              autoFocus
+              value={draftName}
+              onChangeText={setDraftName}
+              placeholder="What are we buying?"
+              placeholderTextColor={colors.faint}
+              style={styles.nameInput}
+            />
+            {draftError ? <Text style={styles.nameError}>{draftError}</Text> : null}
+            <View style={styles.sheetRow}>
+              <View style={styles.stepper}>
+                <Pressable
+                  style={({ pressed }) => [styles.stepperButton, pressed && styles.stepperButtonPressed]}
+                  onPress={() => setDraftQty((q) => Math.max(1, q - 1))}
+                >
+                  <Text style={styles.stepperButtonLabel}>−</Text>
+                </Pressable>
+                <Text style={styles.stepperValue}>{draftQty}</Text>
+                <Pressable
+                  style={({ pressed }) => [styles.stepperButton, pressed && styles.stepperButtonPressed]}
+                  onPress={() => setDraftQty((q) => Math.min(9999, q + 1))}
+                >
+                  <Text style={styles.stepperButtonLabel}>+</Text>
+                </Pressable>
+              </View>
+              <TextInput
+                value={draftNote}
+                onChangeText={setDraftNote}
+                placeholder="Note — brand, ripeness…"
+                placeholderTextColor={colors.faint}
+                style={styles.noteInput}
+              />
+            </View>
+            <PrimaryButton
+              label={sheet.mode === "edit" ? "Save changes" : "Add it"}
+              onPress={handleCommit}
+              loading={saving}
+            />
+            {sheet.mode === "edit" ? (
+              <Pressable style={styles.removeButton} onPress={handleRemove}>
+                <Text style={styles.removeButtonLabel}>Remove from list</Text>
+              </Pressable>
+            ) : (
+              <Pressable style={styles.bulkToggle} onPress={() => setBulkMode(true)}>
+                <Text style={styles.bulkToggleLabel}>Paste multiple items at once</Text>
+              </Pressable>
+            )}
+          </>
+        )}
       </BottomSheet>
 
       <BottomSheet visible={manageSheet === "menu"} onClose={closeManageSheet}>

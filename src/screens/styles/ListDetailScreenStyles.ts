@@ -344,6 +344,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.danger,
   },
+  bulkToggle: {
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  bulkToggleLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 14,
+    color: colors.mint,
+  },
+  bulkInput: {
+    height: 160,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    fontFamily: fonts.outfit400,
+    fontSize: 16,
+    color: colors.ink,
+    marginBottom: 8,
+    textAlignVertical: "top",
+  },
 
   // Manage list sheet (rename / delete)
   sheetBody: {
