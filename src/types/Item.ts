@@ -4,6 +4,7 @@ export interface Item {
   quantity: number;
   unit?: string;
   note?: string;
+  aisle?: string | null;
   is_checked: boolean;
   list_id: string;
   created_at: string;

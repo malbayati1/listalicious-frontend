@@ -127,6 +127,7 @@ export type NewItemData = {
   name: string;
   quantity: number;
   note?: string;
+  aisle?: string | null;
 };
 
 // The backend serializes Item's id field inconsistently across routes: GET
@@ -154,6 +155,7 @@ export const addItem = async (listId: string, data: NewItemData): Promise<Item> 
     name: data.name,
     quantity: data.quantity,
     note: data.note || undefined,
+    aisle: data.aisle || undefined,
     is_checked: false,
   });
   return normalizeItem(response.data);
@@ -165,6 +167,7 @@ export const addItemsBulk = async (listId: string, items: NewItemData[]): Promis
       name: data.name,
       quantity: data.quantity,
       note: data.note || undefined,
+      aisle: data.aisle || undefined,
       is_checked: false,
     })),
   });
@@ -176,6 +179,10 @@ export const updateItem = async (listId: string, itemId: string, data: NewItemDa
     name: data.name,
     quantity: data.quantity,
     note: data.note || undefined,
+    // Explicit null (not omitted) so clearing a previously-set aisle actually
+    // clears it server-side — the backend only applies keys present in the
+    // body (`exclude_unset`), and axios drops `undefined` keys entirely.
+    aisle: data.aisle || null,
   });
   return normalizeItem(response.data);
 };

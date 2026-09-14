@@ -46,6 +46,23 @@ function itemQtyLabel(item: Item): string {
   return item.unit ? `${item.quantity} × ${item.unit}` : `×${item.quantity}`;
 }
 
+// Order matches the design handoff's aisle groups. Items with no aisle set
+// (or, defensively, some other value) fall into a trailing "Other" bucket —
+// empty groups are simply never rendered, same principle as the design's
+// "empty aisles omitted."
+const AISLE_OPTIONS = ["Produce", "Dairy", "Bakery", "Pantry", "Freezer", "Household"];
+const OTHER_AISLE_LABEL = "Other";
+
+function groupItemsByAisle(items: Item[]): { label: string; items: Item[] }[] {
+  const groups = [...AISLE_OPTIONS, OTHER_AISLE_LABEL].map((label) => ({ label, items: [] as Item[] }));
+  const byLabel = new Map(groups.map((g) => [g.label, g]));
+  items.forEach((item) => {
+    const group = (item.aisle && byLabel.get(item.aisle)) || byLabel.get(OTHER_AISLE_LABEL)!;
+    group.items.push(item);
+  });
+  return groups.filter((group) => group.items.length > 0);
+}
+
 const BULK_LINE_PATTERN = /^(\d+)\s*[xX]?\s+(.+)$/;
 
 function parseBulkLines(text: string): NewItemData[] {
@@ -82,6 +99,7 @@ export default function ListDetailScreen() {
   const [draftName, setDraftName] = useState("");
   const [draftQty, setDraftQty] = useState(1);
   const [draftNote, setDraftNote] = useState("");
+  const [draftAisle, setDraftAisle] = useState<string | null>(null);
   const [draftError, setDraftError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
 
@@ -134,6 +152,10 @@ export default function ListDetailScreen() {
   const done = items?.filter((item) => item.is_checked).length ?? 0;
   const progress = total > 0 ? done / total : 0;
   const allDone = total > 0 && done === total;
+  // Reorder mode works on the flat position-ordered list (that's what the
+  // up/down nudges and the backend's reorder endpoint operate on) — aisle
+  // grouping is a display-only view for the normal, non-reordering mode.
+  const groupedItems = items && !reorderMode ? groupItemsByAisle(items) : null;
 
   useEffect(() => {
     if (allDone && !wasAllDone.current) {
@@ -162,6 +184,7 @@ export default function ListDetailScreen() {
     setDraftName("");
     setDraftQty(1);
     setDraftNote("");
+    setDraftAisle(null);
     setDraftError(undefined);
     setBulkMode(false);
     setBulkText("");
@@ -173,6 +196,7 @@ export default function ListDetailScreen() {
     setDraftName(item.name);
     setDraftQty(item.quantity);
     setDraftNote(item.note ?? "");
+    setDraftAisle(item.aisle ?? null);
     setDraftError(undefined);
     setSheet({ mode: "edit", item });
   };
@@ -193,7 +217,12 @@ export default function ListDetailScreen() {
       setSaving(true);
       try {
         if (sheet.mode === "add") {
-          const created = await addItem(id, { name: trimmedName, quantity: draftQty, note: draftNote.trim() });
+          const created = await addItem(id, {
+            name: trimmedName,
+            quantity: draftQty,
+            note: draftNote.trim(),
+            aisle: draftAisle,
+          });
           setItems((current) => (current ? [...current, created] : [created]));
           showToast(`Added ${created.name}`, selfInitial);
         } else {
@@ -201,6 +230,7 @@ export default function ListDetailScreen() {
             name: trimmedName,
             quantity: draftQty,
             note: draftNote.trim(),
+            aisle: draftAisle,
           });
           setItems((current) => (current ? current.map((i) => (i.id === updated.id ? updated : i)) : current));
           showToast(`Updated ${updated.name}`, selfInitial);
@@ -548,83 +578,101 @@ export default function ListDetailScreen() {
               </View>
             ) : (
               <View style={[styles.scrollContent, { paddingBottom: 130 + insets.bottom }]}>
-                <View style={styles.groupHeader}>
-                  <Text style={styles.groupLabel}>ITEMS</Text>
-                  <View style={styles.groupHairline} />
-                  {total >= 2 ? (
+                {total >= 2 ? (
+                  <View style={styles.reorderToggleRow}>
                     <Pressable onPress={() => setReorderMode((v) => !v)} hitSlop={8}>
                       <Text style={styles.reorderToggle}>{reorderMode ? "Done" : "Reorder"}</Text>
                     </Pressable>
-                  ) : null}
-                  <Text style={styles.groupCount}>{total}</Text>
-                </View>
-                <View style={styles.itemList}>
-                  {items?.map((item, index) =>
-                    reorderMode ? (
-                      <View key={item.id} style={styles.itemRow}>
-                        <View style={styles.reorderArrows}>
-                          <Pressable
-                            testID={`item-move-up-${item.id}`}
-                            style={[styles.reorderArrowButton, index === 0 && styles.reorderArrowButtonDisabled]}
-                            onPress={() => handleMoveUp(index)}
-                            disabled={index === 0}
-                            hitSlop={4}
-                          >
-                            <ChevronUpIcon size={16} color={index === 0 ? colors.disabledStrong : colors.ink} />
-                          </Pressable>
-                          <Pressable
-                            testID={`item-move-down-${item.id}`}
-                            style={[
-                              styles.reorderArrowButton,
-                              index === total - 1 && styles.reorderArrowButtonDisabled,
-                            ]}
-                            onPress={() => handleMoveDown(index)}
-                            disabled={index === total - 1}
-                            hitSlop={4}
-                          >
-                            <ChevronDownIcon
-                              size={16}
-                              color={index === total - 1 ? colors.disabledStrong : colors.ink}
-                            />
-                          </Pressable>
-                        </View>
-                        <View style={styles.itemTextBlock}>
-                          <Text style={styles.itemName} numberOfLines={1}>
-                            {item.name}
-                          </Text>
-                        </View>
-                      </View>
-                    ) : (
-                      <View key={item.id} style={styles.itemRow}>
-                        <Pressable
-                          testID={`item-checkbox-${item.id}`}
-                          onPress={() => handleToggle(item)}
-                          style={[styles.checkbox, item.is_checked && styles.checkboxChecked]}
-                          hitSlop={8}
-                        >
-                          {item.is_checked ? <CheckIcon /> : null}
-                        </Pressable>
-                        <Pressable style={styles.itemTextBlock} onPress={() => openEditSheet(item)}>
-                          <Text
-                            testID="item-name"
-                            style={[styles.itemName, item.is_checked && styles.itemNameChecked]}
-                            numberOfLines={1}
-                          >
-                            {item.name}
-                          </Text>
-                          <View style={styles.itemMetaRow}>
-                            <Text style={styles.itemQty}>{itemQtyLabel(item)}</Text>
-                            {item.note ? (
-                              <Text style={styles.itemNote} numberOfLines={1}>
-                                · {item.note}
-                              </Text>
-                            ) : null}
+                  </View>
+                ) : null}
+
+                {reorderMode ? (
+                  <>
+                    <View style={styles.groupHeader}>
+                      <Text style={styles.groupLabel}>ITEMS</Text>
+                      <View style={styles.groupHairline} />
+                      <Text style={styles.groupCount}>{total}</Text>
+                    </View>
+                    <View style={styles.itemList}>
+                      {items?.map((item, index) => (
+                        <View key={item.id} style={styles.itemRow}>
+                          <View style={styles.reorderArrows}>
+                            <Pressable
+                              testID={`item-move-up-${item.id}`}
+                              style={[styles.reorderArrowButton, index === 0 && styles.reorderArrowButtonDisabled]}
+                              onPress={() => handleMoveUp(index)}
+                              disabled={index === 0}
+                              hitSlop={4}
+                            >
+                              <ChevronUpIcon size={16} color={index === 0 ? colors.disabledStrong : colors.ink} />
+                            </Pressable>
+                            <Pressable
+                              testID={`item-move-down-${item.id}`}
+                              style={[
+                                styles.reorderArrowButton,
+                                index === total - 1 && styles.reorderArrowButtonDisabled,
+                              ]}
+                              onPress={() => handleMoveDown(index)}
+                              disabled={index === total - 1}
+                              hitSlop={4}
+                            >
+                              <ChevronDownIcon
+                                size={16}
+                                color={index === total - 1 ? colors.disabledStrong : colors.ink}
+                              />
+                            </Pressable>
                           </View>
-                        </Pressable>
+                          <View style={styles.itemTextBlock}>
+                            <Text style={styles.itemName} numberOfLines={1}>
+                              {item.name}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                ) : (
+                  groupedItems?.map((group) => (
+                    <View key={group.label}>
+                      <View style={styles.groupHeader}>
+                        <Text style={styles.groupLabel}>{group.label.toUpperCase()}</Text>
+                        <View style={styles.groupHairline} />
+                        <Text style={styles.groupCount}>{group.items.length}</Text>
                       </View>
-                    )
-                  )}
-                </View>
+                      <View style={styles.itemList}>
+                        {group.items.map((item) => (
+                          <View key={item.id} style={styles.itemRow}>
+                            <Pressable
+                              testID={`item-checkbox-${item.id}`}
+                              onPress={() => handleToggle(item)}
+                              style={[styles.checkbox, item.is_checked && styles.checkboxChecked]}
+                              hitSlop={8}
+                            >
+                              {item.is_checked ? <CheckIcon /> : null}
+                            </Pressable>
+                            <Pressable style={styles.itemTextBlock} onPress={() => openEditSheet(item)}>
+                              <Text
+                                testID="item-name"
+                                style={[styles.itemName, item.is_checked && styles.itemNameChecked]}
+                                numberOfLines={1}
+                              >
+                                {item.name}
+                              </Text>
+                              <View style={styles.itemMetaRow}>
+                                <Text style={styles.itemQty}>{itemQtyLabel(item)}</Text>
+                                {item.note ? (
+                                  <Text style={styles.itemNote} numberOfLines={1}>
+                                    · {item.note}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            </Pressable>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ))
+                )}
 
                 {allDone ? (
                   <View style={styles.finishCard}>
@@ -712,6 +760,23 @@ export default function ListDetailScreen() {
                 style={styles.noteInput}
               />
             </View>
+
+            <Text style={styles.aisleLabel}>AISLE</Text>
+            <View style={styles.aisleChipRow}>
+              {AISLE_OPTIONS.map((aisle) => {
+                const selected = draftAisle === aisle;
+                return (
+                  <Pressable
+                    key={aisle}
+                    onPress={() => setDraftAisle(selected ? null : aisle)}
+                    style={[styles.aisleChip, selected && styles.aisleChipSelected]}
+                  >
+                    <Text style={[styles.aisleChipLabel, selected && styles.aisleChipLabelSelected]}>{aisle}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             <PrimaryButton
               label={sheet.mode === "edit" ? "Save changes" : "Add it"}
               onPress={handleCommit}

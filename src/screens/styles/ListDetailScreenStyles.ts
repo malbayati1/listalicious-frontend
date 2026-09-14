@@ -115,6 +115,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.mint,
   },
+  reorderToggleRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 12,
+  },
   itemList: {
     gap: 8,
     marginBottom: 22,
@@ -351,6 +356,42 @@ const styles = StyleSheet.create({
     fontFamily: fonts.outfit400,
     fontSize: 15,
     color: colors.ink,
+  },
+  aisleLabel: {
+    fontFamily: fonts.mono500,
+    fontSize: 11,
+    letterSpacing: 0.66,
+    textTransform: "uppercase",
+    color: colors.muted,
+    marginBottom: 10,
+  },
+  aisleChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 20,
+  },
+  aisleChip: {
+    height: 38,
+    paddingHorizontal: 14,
+    borderRadius: 13,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aisleChipSelected: {
+    backgroundColor: colors.mintWash,
+    borderColor: "rgba(94,230,168,0.5)",
+  },
+  aisleChipLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 13,
+    color: colors.muted,
+  },
+  aisleChipLabelSelected: {
+    color: colors.mint,
   },
   removeButton: {
     height: 48,
