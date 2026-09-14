@@ -1,7 +1,7 @@
 // auth/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getToken, saveToken, deleteToken } from "../utils/tokenStorage";
-import { setInMemoryToken } from "../api/authClient";
+import { getToken, saveToken, deleteToken, saveRefreshToken, deleteRefreshToken } from "../utils/tokenStorage";
+import { setInMemoryToken, setSessionExpiredHandler } from "../api/authClient";
 import { login as loginApi, getMe } from "../api/authApi";
 import { User } from "../types/User";
 
@@ -24,6 +24,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // If a request 401s and a silent token refresh (see authClient.tsx) also
+    // fails, this fires — the session is genuinely over, so drop back to a
+    // clean logged-out state instead of leaving every screen stuck showing
+    // its own "Something went wrong" with no way out.
+    setSessionExpiredHandler(() => {
+      if (!mounted) {
+        return;
+      }
+      setToken(null);
+      setUser(null);
+    });
+
     const bootstrapAuth = async () => {
       const stored = await getToken();
       let me: User | null = null;
@@ -31,10 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (stored) {
         setInMemoryToken(stored);
         try {
+          // If this access token has expired, the interceptor in authClient.tsx
+          // transparently refreshes it (using the stored refresh token) and
+          // retries — so this only throws when there's truly no valid session.
           me = await getMe();
         } catch {
-          // stored token is no longer valid — treat as logged out
           await deleteToken();
+          await deleteRefreshToken();
           setInMemoryToken(null);
         }
       }
@@ -53,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      setSessionExpiredHandler(null);
     };
   }, []);
 
@@ -63,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     });
     await saveToken(res.access_token);
+    await saveRefreshToken(res.refresh_token);
     setToken(res.access_token);
     setInMemoryToken(res.access_token);
     setUser(res.user);
@@ -70,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await deleteToken();
+    await deleteRefreshToken();
     setToken(null);
     setInMemoryToken(null);
     setUser(null);

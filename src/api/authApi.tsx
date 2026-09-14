@@ -6,6 +6,7 @@ import apiClient, { setInMemoryToken } from "./authClient";
 interface AuthResponse {
   user: User;
   access_token: string;
+  refresh_token: string;
 }
 
 function toUrlEncoded(data: Record<string, string>): string {
