@@ -248,6 +248,56 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.danger,
   },
+
+  sessionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginBottom: 10,
+  },
+  sessionInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  sessionMeta: {
+    fontFamily: fonts.outfit400,
+    fontSize: 12.5,
+    color: colors.muted,
+    marginTop: 2,
+  },
+  sessionBadge: {
+    alignSelf: "flex-start",
+    marginTop: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 99,
+    backgroundColor: colors.mintWash,
+  },
+  sessionBadgeLabel: {
+    fontFamily: fonts.mono500,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    color: colors.mint,
+  },
+  sessionRevokeButton: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,138,128,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sessionRevokeLabel: {
+    fontFamily: fonts.outfit500,
+    fontSize: 13,
+    color: colors.danger,
+  },
 });
 
 export default styles;
