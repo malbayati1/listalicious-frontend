@@ -44,7 +44,7 @@ export default function LoginScreen() {
       setLoading(true);
       try {
         await login(trimmedEmail, password);
-        const destination = next && next.startsWith("/") ? next : "/(app)";
+        const destination = next && next.startsWith("/") ? next : "/(app)/(tabs)";
         router.replace(destination as unknown as Parameters<typeof router.replace>[0]);
       } catch (error) {
         console.error("Login failed:", error);
@@ -90,7 +90,9 @@ export default function LoginScreen() {
               onSubmitEditing={handleLogin}
             />
 
-            <Text style={styles.forgotPassword}>Forgot password?</Text>
+            <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
+              <Text style={styles.forgotPassword}>Forgot password?</Text>
+            </Pressable>
 
             {formError ? <Text style={styles.formError}>{formError}</Text> : null}
           </View>
