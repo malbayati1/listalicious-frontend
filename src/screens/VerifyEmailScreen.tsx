@@ -68,7 +68,7 @@ export default function VerifyEmailScreen() {
     const submit = async () => {
       try {
         await requestEmailVerification();
-        setResendMessage("Sent again — check the backend server logs.");
+        setResendMessage("Sent again — check your inbox.");
         startCooldown();
       } catch (error) {
         console.error("Failed to resend verification email:", error);
@@ -80,7 +80,7 @@ export default function VerifyEmailScreen() {
   const handleVerify = () => {
     const token = extractVerificationToken(tokenInput);
     if (!token) {
-      setVerifyError("Paste the link or token from the server logs");
+      setVerifyError("Paste the link or token from the email");
       return;
     }
     setVerifyError(undefined);
@@ -122,11 +122,10 @@ export default function VerifyEmailScreen() {
           </Text>
 
           <View style={styles.devNoteCard}>
-            <Text style={styles.devNoteLabel}>DEV MODE</Text>
+            <Text style={styles.devNoteLabel}>CAN'T FIND THE EMAIL?</Text>
             <Text style={styles.devNoteBody}>
-              No email service is configured, so the link isn't actually emailed — the backend logs it to its console
-              instead. Find the line starting with "[dev] email verification link", then paste the link or just the
-              token below.
+              It can take a minute, and check spam. If it doesn't show up, or the link doesn't open correctly, paste
+              the link or just the token below instead.
             </Text>
           </View>
 

@@ -158,7 +158,7 @@ export default function ProfileScreen() {
   const handleConfirmEmailChange = () => {
     const token = confirmToken.trim();
     if (!token) {
-      setConfirmError("Paste the link or token from the server logs");
+      setConfirmError("Paste the link or token from the email");
       return;
     }
     setConfirmError(undefined);
@@ -485,11 +485,10 @@ export default function ProfileScreen() {
         ) : (
           <>
             <View style={styles.devNoteCard}>
-              <Text style={styles.devNoteLabel}>DEV MODE</Text>
+              <Text style={styles.devNoteLabel}>CAN'T FIND THE EMAIL?</Text>
               <Text style={styles.devNoteBody}>
-                No email service is configured, so the confirmation link for {pendingEmail || "your new address"} was
-                logged to the backend's console instead of emailed. Find the line starting with "[dev] email change
-                confirmation link", then paste the link or token below.
+                We sent a confirmation link to {pendingEmail || "your new address"}. It can take a minute, and check
+                spam. If it doesn't show up, or the link doesn't open correctly, paste the link or token below.
               </Text>
             </View>
             <Text style={styles.fieldLabel}>Confirmation link or token</Text>

@@ -62,7 +62,7 @@ export default function ForgotPasswordScreen() {
   const handleReset = () => {
     const token = extractResetToken(tokenInput);
     if (!token) {
-      setResetError("Paste the link or token from the server logs");
+      setResetError("Paste the link or token from the email");
       return;
     }
     if (!isPasswordValid(newPassword)) {
@@ -129,11 +129,10 @@ export default function ForgotPasswordScreen() {
               </Text>
 
               <View style={styles.devNoteCard}>
-                <Text style={styles.devNoteLabel}>DEV MODE</Text>
+                <Text style={styles.devNoteLabel}>CAN'T FIND THE EMAIL?</Text>
                 <Text style={styles.devNoteBody}>
-                  No email service is configured, so the link isn't actually emailed — the backend logs it to its
-                  console instead. Find the line starting with "[dev] password reset link", then paste the link or
-                  just the token below along with your new password.
+                  It can take a minute, and check spam. If it doesn't show up, or the link doesn't open correctly,
+                  paste the link or just the token below along with your new password.
                 </Text>
               </View>
 
